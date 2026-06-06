@@ -194,6 +194,7 @@ O repositório no GitHub precisa ter o token do Docker Hub disponível como secr
 - `DOCKERHUB_TOKEN`
 
 O usuário é fixo no workflow como `wvxbs`, para evitar falha por variable ausente.
+Se `DOCKERHUB_TOKEN` não estiver configurado, o workflow ainda constrói a imagem para validar o build, mas pula o push para o Docker Hub.
 
 ## Formato prioritário
 
