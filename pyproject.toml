@@ -14,6 +14,8 @@ dependencies = []
 
 [project.scripts]
 ghub-freestyle = "ghub_freestyle_injector.cli:main"
+ghub-freestyle-gui = "ghub_freestyle_injector.gui_tk:main"
+ghub-freestyle-web = "ghub_freestyle_injector.web:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

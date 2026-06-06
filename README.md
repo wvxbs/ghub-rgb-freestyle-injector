@@ -98,6 +98,81 @@ docker run --rm \
 
 Observação: no WSL, o comando `--kill-ghub` depende de acesso ao `taskkill.exe` do Windows. Dentro do Docker isso normalmente não existe, então o jeito mais previsível é fechar o G HUB antes ou rodar `ghub-freestyle kill-ghub` fora do contêiner.
 
+## Interface visual
+
+Esta branch adiciona duas interfaces visuais sobre o mesmo motor da CLI.
+
+### Executável nativo do Windows
+
+A interface nativa usa Tkinter/ttk, abre como uma janela simples do Windows e permite:
+
+- escolher a pasta das paletas;
+- escolher o `settings.db`;
+- listar paletas e presets existentes;
+- simular a sincronização;
+- aplicar a sincronização;
+- encerrar o G HUB antes de aplicar;
+- ver o log do que está acontecendo.
+
+O workflow `Build GUI artifacts` gera o artifact:
+
+```text
+GHubFreestyleInjector-windows-x64
+```
+
+Por enquanto o formato é `.exe`, não `.msi`. Para esta ferramenta, o `.exe` faz mais sentido: é portátil, não precisa instalar nada e reduz a chance de dor de cabeça em máquina recém-formatada. Um `.msi` só passaria a valer a pena se o projeto precisasse de instalador, atalhos no menu iniciar, atualização automática ou associação de arquivos.
+
+Localmente, em um Windows com Python instalado, a GUI pode ser aberta com:
+
+```powershell
+ghub-freestyle-gui
+```
+
+Ou, no checkout:
+
+```powershell
+python -m ghub_freestyle_injector.gui_tk
+```
+
+### Interface web em Docker
+
+A interface web é pensada para desenvolvimento e para quem quer usar Docker/Compose. Ela não substitui o `.exe` para uso cotidiano no Windows, porque um contêiner não é um bom lugar para encerrar processos do G HUB.
+
+Subir a interface:
+
+```bash
+docker compose up gui
+```
+
+Abrir:
+
+```text
+http://localhost:8080
+```
+
+Rodar a CLI via Compose em modo simulação:
+
+```bash
+docker compose run --rm cli
+```
+
+Você pode trocar os volumes com variáveis:
+
+```bash
+PALETTES_DIR=/mnt/c/Users/gabri/OneDrive/Desktop \
+LGHUB_DIR=/mnt/c/Users/gabri/AppData/Local/LGHUB \
+docker compose up gui
+```
+
+### Organização de branches e imagens
+
+A organização recomendada é:
+
+- `main`: CLI estável, biblioteca principal e imagem Docker inegociável `wvxbs/ghub-rgb-freestyle-injector`.
+- `feature/windows-gui`: evolução da interface visual, do `.exe` e da imagem web `wvxbs/ghub-rgb-freestyle-injector-gui`.
+
+Manter duas imagens faz sentido se a interface web continuar existindo: a imagem da CLI deve permanecer pequena e previsível; a imagem da interface pode ter servidor, assets e comportamento de app. Para o executável nativo, Docker não agrega muito no uso final. O melhor caminho prático é ter os dois: Compose para desenvolvimento e `.exe` para rodar e esquecer no Windows.
+
 ## Publicação no Docker Hub
 
 O workflow `.github/workflows/docker-publish.yml` publica a imagem no Docker Hub quando há push na branch `main`, seguindo o mesmo padrão usado em `telemetry-lab`.
@@ -114,10 +189,11 @@ Tags geradas:
 - nome da branch
 - `sha-<commit>`
 
-O repositório no GitHub precisa ter estes variables no environment `DOCKERHUB_USERNAME`:
+O repositório no GitHub precisa ter o token do Docker Hub disponível como secret ou variable:
 
-- `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
+
+O usuário é fixo no workflow como `wvxbs`, para evitar falha por variable ausente.
 
 ## Formato prioritário
 
