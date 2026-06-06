@@ -19,7 +19,7 @@ O fluxo esperado é simples: você aponta para uma pasta com paletas, roda um co
 ## Instalação no Arch/WSL
 
 ```bash
-cd ~/Documentos/repos/ghub-rgb-freestyle-injector
+cd ghub-rgb-freestyle-injector
 python3 -m pip install --user -e .
 ```
 
@@ -31,11 +31,11 @@ PYTHONPATH=src python3 -m ghub_freestyle_injector.cli --help
 
 ## Uso rápido
 
-Com a pasta gerada na Área de Trabalho:
+Com uma pasta de paletas em qualquer lugar do sistema:
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --kill-ghub
 ```
 
@@ -43,7 +43,7 @@ Para ver o que aconteceria sem alterar nada:
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --dry-run
 ```
 
@@ -51,7 +51,7 @@ Para listar paletas detectadas e presets já existentes no G HUB:
 
 ```bash
 ghub-freestyle list \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --managed-only
 ```
 
@@ -59,7 +59,7 @@ Para forçar a regravação de tudo:
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --force \
   --kill-ghub
 ```
@@ -68,7 +68,7 @@ Para remover presets `RGB - ...` que foram criados por este projeto, mas não ex
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --prune \
   --kill-ghub
 ```
@@ -87,8 +87,8 @@ Exemplo no WSL com Docker Desktop integrado:
 docker build -t ghub-rgb-freestyle-injector .
 
 docker run --rm \
-  -v /mnt/c/Users/gabri/OneDrive/Desktop:/input \
-  -v /mnt/c/Users/gabri/AppData/Local/LGHUB:/lghub \
+  -v /mnt/c/Users/<usuario>/RGB-palettes:/input \
+  -v /mnt/c/Users/<usuario>/AppData/Local/LGHUB:/lghub \
   -v "$PWD/.state:/state" \
   ghub-rgb-freestyle-injector sync \
   --input /input \
@@ -222,3 +222,7 @@ Se algo ficar estranho:
 - O G HUB fechado reduz bastante a chance de conflito com `settings.db-wal`.
 - O projeto não associa presets a jogos. Ele cria presets Freestyle globais para você escolher no app.
 - O atalho/prompt para gerar novas paletas descrito no pacote de entrada é documentação útil, mas não faz parte do escopo deste injetor.
+
+## Licença
+
+Este projeto usa a licença MIT. Ela é uma licença permissiva: permite usar, modificar, distribuir e reaproveitar o código com poucas restrições, desde que o aviso de copyright e a licença sejam preservados. Para este tipo de ferramenta pessoal/open source pequena, é uma escolha comum e de baixo atrito. Ela não oferece garantia nem suporte obrigatório.
