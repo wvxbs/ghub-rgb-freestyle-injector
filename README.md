@@ -189,12 +189,12 @@ Tags geradas:
 - nome da branch
 - `sha-<commit>`
 
-O repositório no GitHub precisa ter o token do Docker Hub disponível como secret ou variable:
+O repositório no GitHub precisa ter:
 
-- `DOCKERHUB_TOKEN`
+- `DOCKERHUB_USERNAME` como variable;
+- `DOCKERHUB_TOKEN` como secret.
 
-O usuário é fixo no workflow como `wvxbs`, para evitar falha por variable ausente.
-Se `DOCKERHUB_TOKEN` não estiver configurado, o workflow ainda constrói a imagem para validar o build, mas pula o push para o Docker Hub.
+O usuário e o token não ficam hardcoded no workflow. O token deve ser secret, não variable, para ser mascarado pelo GitHub Actions.
 
 ## Licença
 
