@@ -114,10 +114,7 @@ Tags geradas:
 - nome da branch
 - `sha-<commit>`
 
-O repositório no GitHub precisa ter estes variables no environment `DOCKERHUB_USERNAME`:
-
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
+O repositório no GitHub precisa ter `DOCKERHUB_USERNAME` como variable e `DOCKERHUB_TOKEN` como secret.
 
 ## Formato prioritário
 
