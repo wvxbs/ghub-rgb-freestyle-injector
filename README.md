@@ -189,12 +189,7 @@ Tags geradas:
 - nome da branch
 - `sha-<commit>`
 
-O repositório no GitHub precisa ter:
-
-- `DOCKERHUB_USERNAME` como variable;
-- `DOCKERHUB_TOKEN` como secret.
-
-O usuário e o token não ficam hardcoded no workflow. O token deve ser secret, não variable, para ser mascarado pelo GitHub Actions.
+O workflow segue o mesmo padrão de `telemetry-lab`: `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` são lidos de `vars`, dentro do environment `DOCKERHUB_USERNAME`. Nada fica hardcoded no YAML.
 
 ## Licença
 
