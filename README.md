@@ -98,6 +98,27 @@ docker run --rm \
 
 Observação: no WSL, o comando `--kill-ghub` depende de acesso ao `taskkill.exe` do Windows. Dentro do Docker isso normalmente não existe, então o jeito mais previsível é fechar o G HUB antes ou rodar `ghub-freestyle kill-ghub` fora do contêiner.
 
+## Publicação no Docker Hub
+
+O workflow `.github/workflows/docker-publish.yml` publica a imagem no Docker Hub quando há push na branch `main`, seguindo o mesmo padrão usado em `telemetry-lab`.
+
+Imagem publicada:
+
+```text
+wvxbs/ghub-rgb-freestyle-injector
+```
+
+Tags geradas:
+
+- `latest`
+- nome da branch
+- `sha-<commit>`
+
+O repositório no GitHub precisa ter estes variables no environment `DOCKERHUB_USERNAME`:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
 ## Formato prioritário
 
 O formato recomendado é `palettes_codex_ready.json`:
