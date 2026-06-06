@@ -39,7 +39,7 @@ def default_lghub_dir() -> Path:
         if (candidate / "settings.db").exists():
             return candidate
 
-    return Path("/mnt/c/Users/gabri/AppData/Local/LGHUB")
+    return Path("settings.db").resolve().parent
 
 
 def default_db_path() -> Path:

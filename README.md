@@ -19,7 +19,7 @@ O fluxo esperado é simples: você aponta para uma pasta com paletas, roda um co
 ## Instalação no Arch/WSL
 
 ```bash
-cd ~/Documentos/repos/ghub-rgb-freestyle-injector
+cd ghub-rgb-freestyle-injector
 python3 -m pip install --user -e .
 ```
 
@@ -31,11 +31,11 @@ PYTHONPATH=src python3 -m ghub_freestyle_injector.cli --help
 
 ## Uso rápido
 
-Com a pasta gerada na Área de Trabalho:
+Com uma pasta de paletas em qualquer lugar do sistema:
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --kill-ghub
 ```
 
@@ -43,7 +43,7 @@ Para ver o que aconteceria sem alterar nada:
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --dry-run
 ```
 
@@ -51,7 +51,7 @@ Para listar paletas detectadas e presets já existentes no G HUB:
 
 ```bash
 ghub-freestyle list \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --managed-only
 ```
 
@@ -59,7 +59,7 @@ Para forçar a regravação de tudo:
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --force \
   --kill-ghub
 ```
@@ -68,7 +68,7 @@ Para remover presets `RGB - ...` que foram criados por este projeto, mas não ex
 
 ```bash
 ghub-freestyle sync \
-  --input /mnt/c/Users/gabri/OneDrive/Desktop \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --prune \
   --kill-ghub
 ```
@@ -87,8 +87,8 @@ Exemplo no WSL com Docker Desktop integrado:
 docker build -t ghub-rgb-freestyle-injector .
 
 docker run --rm \
-  -v /mnt/c/Users/gabri/OneDrive/Desktop:/input \
-  -v /mnt/c/Users/gabri/AppData/Local/LGHUB:/lghub \
+  -v /mnt/c/Users/<usuario>/RGB-palettes:/input \
+  -v /mnt/c/Users/<usuario>/AppData/Local/LGHUB:/lghub \
   -v "$PWD/.state:/state" \
   ghub-rgb-freestyle-injector sync \
   --input /input \
@@ -156,11 +156,11 @@ Rodar a CLI via Compose em modo simulação:
 docker compose run --rm cli
 ```
 
-Você pode trocar os volumes com variáveis:
+Por padrão, o Compose usa pastas locais genéricas (`./palettes`, `./lghub-data`). Para apontar para os dados reais, use variáveis:
 
 ```bash
-PALETTES_DIR=/mnt/c/Users/gabri/OneDrive/Desktop \
-LGHUB_DIR=/mnt/c/Users/gabri/AppData/Local/LGHUB \
+PALETTES_DIR=/mnt/c/Users/<usuario>/RGB-palettes \
+LGHUB_DIR=/mnt/c/Users/<usuario>/AppData/Local/LGHUB \
 docker compose up gui
 ```
 
@@ -195,6 +195,10 @@ O repositório no GitHub precisa ter o token do Docker Hub disponível como secr
 
 O usuário é fixo no workflow como `wvxbs`, para evitar falha por variable ausente.
 Se `DOCKERHUB_TOKEN` não estiver configurado, o workflow ainda constrói a imagem para validar o build, mas pula o push para o Docker Hub.
+
+## Licença
+
+Este projeto usa a licença MIT. Ela é uma licença permissiva: permite usar, modificar, distribuir e reaproveitar o código com poucas restrições, desde que o aviso de copyright e a licença sejam preservados. Para este tipo de ferramenta pessoal/open source pequena, é uma escolha comum e de baixo atrito. Ela não oferece garantia nem suporte obrigatório.
 
 ## Formato prioritário
 

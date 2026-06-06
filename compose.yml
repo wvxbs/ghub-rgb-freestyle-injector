@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
     image: wvxbs/ghub-rgb-freestyle-injector:dev
     volumes:
-      - ${PALETTES_DIR:-/mnt/c/Users/gabri/OneDrive/Desktop}:/input
-      - ${LGHUB_DIR:-/mnt/c/Users/gabri/AppData/Local/LGHUB}:/lghub
+      - ${PALETTES_DIR:-./palettes}:/input
+      - ${LGHUB_DIR:-./lghub-data}:/lghub
       - ./.state:/state
     command:
       - sync
@@ -30,6 +30,6 @@ services:
       LGHUB_DB: /lghub/settings.db
       STATE_PATH: /state/state.json
     volumes:
-      - ${PALETTES_DIR:-/mnt/c/Users/gabri/OneDrive/Desktop}:/input
-      - ${LGHUB_DIR:-/mnt/c/Users/gabri/AppData/Local/LGHUB}:/lghub
+      - ${PALETTES_DIR:-./palettes}:/input
+      - ${LGHUB_DIR:-./lghub-data}:/lghub
       - ./.state:/state
