@@ -65,7 +65,7 @@ WINDOWS_CODESIGN_PFX_PASSWORD
 
 O script versionado em `scripts/sign-windows-artifact.ps1` aceita tanto `CODESIGN_PFX_BASE64` quanto `CODESIGN_PFX_PATH`. Isso permite usar o mesmo fluxo no GitHub Actions e em testes locais com um `.pfx` já existente.
 
-Como o certificado atual é local/de desenvolvimento, ele resolve a integridade e permite validar o pipeline, mas a confiança da máquina depende do certificado estar instalado nos repositórios confiáveis do usuário. Para distribuição pública ampla, o ideal continua sendo um certificado de assinatura de código emitido por uma autoridade reconhecida.
+Como o certificado atual é local/de desenvolvimento, ele resolve a integridade e permite validar o pipeline, mas a confiança da máquina depende do certificado estar instalado nos repositórios confiáveis do usuário. No GitHub Actions, o workflow confia temporariamente no certificado público apenas dentro do runner efêmero para que `signtool verify` consiga validar o artifact. Para distribuição pública ampla, o ideal continua sendo um certificado de assinatura de código emitido por uma autoridade reconhecida.
 
 ## Observações
 

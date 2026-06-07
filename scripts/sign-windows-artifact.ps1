@@ -6,6 +6,7 @@ param(
     [string]$PfxBase64 = $env:CODESIGN_PFX_BASE64,
     [string]$PfxPassword = $env:CODESIGN_PFX_PASSWORD,
     [string]$TimestampUrl = $(if ($env:CODESIGN_TIMESTAMP_URL) { $env:CODESIGN_TIMESTAMP_URL } else { "http://timestamp.digicert.com" }),
+    [switch]$TrustSignerForVerification = ($env:CODESIGN_TRUST_SIGNER_FOR_VERIFY -match "^(1|true|yes)$"),
     [switch]$SkipTimestamp
 )
 
@@ -60,6 +61,28 @@ function Write-TempPfx {
     return $tempPfx
 }
 
+function Trust-SignerForVerification {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CertificatePath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Password
+    )
+
+    $tempCer = Join-Path ([System.IO.Path]::GetTempPath()) ("ghub-freestyle-codesign-{0}.cer" -f ([Guid]::NewGuid()))
+    $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        $CertificatePath,
+        $Password,
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    )
+    [System.IO.File]::WriteAllBytes($tempCer, $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert))
+    Import-Certificate -FilePath $tempCer -CertStoreLocation Cert:\CurrentUser\Root | Out-Null
+    Import-Certificate -FilePath $tempCer -CertStoreLocation Cert:\CurrentUser\TrustedPublisher | Out-Null
+    Remove-Item -LiteralPath $tempCer -Force
+    Write-Host "Signer certificate trusted for verification in the current user store."
+}
+
 $artifactPath = Resolve-Path -LiteralPath $ArtifactDir -ErrorAction SilentlyContinue
 if (-not $artifactPath) {
     throw "Diretorio do artefato nao encontrado: $ArtifactDir"
@@ -86,6 +109,10 @@ try {
         (Join-Path $artifactPath.Path "GHubFreestyleInjector.WinUI.exe"),
         (Join-Path $artifactPath.Path "ghub-freestyle.exe")
     )
+
+    if ($TrustSignerForVerification) {
+        Trust-SignerForVerification -CertificatePath $pfxFile -Password $PfxPassword
+    }
 
     foreach ($target in $targets) {
         $null = Get-RequiredFile -Path $target
