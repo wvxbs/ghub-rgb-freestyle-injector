@@ -11,6 +11,13 @@ namespace GHubFreestyleInjector.WinUI;
 public sealed partial class MainWindow : Window
 {
     private readonly StringBuilder _log = new();
+    private InfoBar StatusBar = null!;
+    private TextBox InputPathBox = null!;
+    private TextBox DbPathBox = null!;
+    private TextBox OutputBox = null!;
+    private CheckBox KillGHubBox = null!;
+    private CheckBox ForceBox = null!;
+    private CheckBox PruneBox = null!;
     private readonly IntPtr _hwnd;
 
     public MainWindow()
@@ -18,6 +25,8 @@ public sealed partial class MainWindow : Window
         App.LogInfo("MainWindow InitializeComponent start");
         InitializeComponent();
         App.LogInfo("MainWindow InitializeComponent done");
+        BuildUi();
+        App.LogInfo("MainWindow BuildUi done");
 
         _hwnd = WindowNative.GetWindowHandle(this);
         App.LogInfo($"HWND acquired: {_hwnd}");
@@ -26,6 +35,144 @@ public sealed partial class MainWindow : Window
         App.LogInfo("Backdrop step done");
         InitializeDefaults();
         App.LogInfo("Defaults initialized");
+    }
+
+
+    private void BuildUi()
+    {
+        RootGrid.Margin = new Thickness(24);
+        RootGrid.RowSpacing = 16;
+        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        RootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        var header = new StackPanel { Spacing = 4 };
+        header.Children.Add(new TextBlock
+        {
+            Text = "G HUB RGB Freestyle Injector",
+            FontSize = 24,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
+        });
+        header.Children.Add(new TextBlock
+        {
+            Text = "Sincronização de presets Freestyle a partir de arquivos Markdown.",
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.78
+        });
+        RootGrid.Children.Add(header);
+
+        StatusBar = new InfoBar
+        {
+            IsOpen = true,
+            Severity = InfoBarSeverity.Informational,
+            Title = "Pronto",
+            Message = "Escolha a pasta de paletas e execute uma simulação antes de aplicar."
+        };
+        Grid.SetRow(StatusBar, 1);
+        RootGrid.Children.Add(StatusBar);
+
+        var inputPanel = new StackPanel { Spacing = 12 };
+        inputPanel.Children.Add(new TextBlock
+        {
+            Text = "Entradas",
+            FontSize = 18,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
+        });
+
+        InputPathBox = new TextBox
+        {
+            Header = "Pasta das paletas",
+            PlaceholderText = @"C:\Caminho\Para\RGB-palettes"
+        };
+        inputPanel.Children.Add(BuildPickerRow(InputPathBox, ChooseInput_Click));
+
+        DbPathBox = new TextBox
+        {
+            Header = "settings.db do G HUB",
+            PlaceholderText = @"C:\Users\...\AppData\Local\LGHUB\settings.db"
+        };
+        inputPanel.Children.Add(BuildPickerRow(DbPathBox, ChooseDb_Click));
+
+        var inputBorder = BuildPanel(inputPanel);
+        Grid.SetRow(inputBorder, 2);
+        RootGrid.Children.Add(inputBorder);
+
+        KillGHubBox = new CheckBox { Content = "Encerrar G HUB antes de aplicar", IsChecked = true };
+        ForceBox = new CheckBox { Content = "Forçar regravação dos presets detectados" };
+        PruneBox = new CheckBox { Content = "Remover presets RGB órfãos" };
+
+        var optionsPanel = new StackPanel { Spacing = 12 };
+        optionsPanel.Children.Add(new TextBlock
+        {
+            Text = "Opções",
+            FontSize = 18,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
+        });
+        optionsPanel.Children.Add(KillGHubBox);
+        optionsPanel.Children.Add(ForceBox);
+        optionsPanel.Children.Add(PruneBox);
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        buttons.Children.Add(new Button { Content = "Listar" });
+        ((Button)buttons.Children[^1]).Click += List_Click;
+        buttons.Children.Add(new Button { Content = "Simular" });
+        ((Button)buttons.Children[^1]).Click += DryRun_Click;
+        buttons.Children.Add(new Button { Content = "Aplicar" });
+        ((Button)buttons.Children[^1]).Click += Apply_Click;
+        buttons.Children.Add(new Button { Content = "Encerrar G HUB" });
+        ((Button)buttons.Children[^1]).Click += KillGHub_Click;
+        optionsPanel.Children.Add(buttons);
+
+        var optionsBorder = BuildPanel(optionsPanel);
+        Grid.SetRow(optionsBorder, 3);
+        RootGrid.Children.Add(optionsBorder);
+
+        OutputBox = new TextBox
+        {
+            Header = "Saída",
+            AcceptsReturn = true,
+            IsReadOnly = true,
+            TextWrapping = TextWrapping.NoWrap,
+            FontFamily = new FontFamily("Consolas"),
+            MinHeight = 220
+        };
+        ScrollViewer.SetVerticalScrollBarVisibility(OutputBox, ScrollBarVisibility.Auto);
+        ScrollViewer.SetHorizontalScrollBarVisibility(OutputBox, ScrollBarVisibility.Auto);
+        var outputBorder = BuildPanel(OutputBox);
+        Grid.SetRow(outputBorder, 4);
+        RootGrid.Children.Add(outputBorder);
+    }
+
+    private static Border BuildPanel(UIElement content)
+    {
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(16),
+            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0x66, 0x66, 0x66)),
+            Child = content
+        };
+    }
+
+    private static Grid BuildPickerRow(TextBox textBox, RoutedEventHandler clickHandler)
+    {
+        var row = new Grid { ColumnSpacing = 10 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.Children.Add(textBox);
+
+        var button = new Button
+        {
+            Content = "Escolher",
+            Margin = new Thickness(0, 28, 0, 0)
+        };
+        button.Click += clickHandler;
+        Grid.SetColumn(button, 1);
+        row.Children.Add(button);
+        return row;
     }
 
     private void TryApplyBackdrop()
