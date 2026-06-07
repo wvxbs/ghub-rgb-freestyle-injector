@@ -1,9 +1,12 @@
 using System.Diagnostics;
 using System.Text;
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.Win32;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
 using Windows.UI;
@@ -15,10 +18,14 @@ public sealed partial class MainWindow : Window
 {
     private readonly StringBuilder _log = new();
     private Grid RootGrid = null!;
+    private Grid AppTitleBar = null!;
     private Border StatusPanel = null!;
+    private FontIcon StatusIcon = null!;
     private TextBlock StatusText = null!;
     private TextBox InputPathBox = null!;
     private TextBox DbPathBox = null!;
+    private TextBlock InputPathText = null!;
+    private TextBlock DbPathText = null!;
     private TextBox OutputBox = null!;
     private TextBlock InstallStateText = null!;
     private ToggleSwitch KillGHubBox = null!;
@@ -55,11 +62,14 @@ public sealed partial class MainWindow : Window
     {
         var grid = new Grid
         {
-            MinWidth = 900,
+            MinWidth = 940,
             MinHeight = 640,
+            RowSpacing = 0,
             ColumnSpacing = 0,
-            Background = new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00))
+            Background = ResolvePageBackground()
         };
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(292) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         return grid;
@@ -74,11 +84,23 @@ public sealed partial class MainWindow : Window
 
     private void InitializeWindowChrome()
     {
-        ExtendsContentIntoTitleBar = false;
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
         try
         {
             AppWindow.Title = "G HUB RGB Freestyle Injector";
             AppWindow.Resize(new SizeInt32(1160, 820));
+            if (AppWindowTitleBar.IsCustomizationSupported())
+            {
+                AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+                AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+                AppWindow.TitleBar.ButtonHoverBackgroundColor = IsLightTheme
+                    ? Color.FromArgb(0x20, 0x00, 0x00, 0x00)
+                    : Color.FromArgb(0x28, 0xFF, 0xFF, 0xFF);
+                AppWindow.TitleBar.ButtonPressedBackgroundColor = IsLightTheme
+                    ? Color.FromArgb(0x30, 0x00, 0x00, 0x00)
+                    : Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF);
+            }
             App.LogInfo($"Window chrome initialized. AppWindowId={AppWindow.Id.Value}");
         }
         catch (Exception ex)
@@ -89,44 +111,88 @@ public sealed partial class MainWindow : Window
 
     private void BuildUi()
     {
-        var shellBackground = ResolvePageBackground();
+        AppTitleBar = BuildTitleBar();
+        Grid.SetColumnSpan(AppTitleBar, 2);
+        RootGrid.Children.Add(AppTitleBar);
+
         RootGrid.Children.Add(BuildSidebar());
 
         var scroll = new ScrollViewer
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Background = shellBackground,
+            Background = new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00)),
             Content = BuildMainSurface()
         };
+        Grid.SetRow(scroll, 1);
         Grid.SetColumn(scroll, 1);
         RootGrid.Children.Add(scroll);
+    }
+
+    private Grid BuildTitleBar()
+    {
+        var titleBar = new Grid
+        {
+            Height = 40,
+            Padding = new Thickness(12, 0, 148, 0),
+            Background = new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00))
+        };
+        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        titleBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        titleBar.Children.Add(new Border
+        {
+            Width = 16,
+            Height = 16,
+            CornerRadius = new CornerRadius(4),
+            Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD4)),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new FontIcon
+            {
+                Glyph = "\uE7F4",
+                FontSize = 10,
+                Foreground = new SolidColorBrush(Colors.White)
+            }
+        });
+
+        var title = new TextBlock
+        {
+            Text = "G HUB RGB Freestyle Injector",
+            FontSize = 12,
+            Opacity = 0.72,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(10, 0, 0, 0)
+        };
+        Grid.SetColumn(title, 1);
+        titleBar.Children.Add(title);
+        return titleBar;
     }
 
     private UIElement BuildSidebar()
     {
         var side = new Grid
         {
-            Padding = new Thickness(14, 18, 12, 18),
+            Padding = new Thickness(16, 14, 14, 18),
             Background = new SolidColorBrush(IsLightTheme
-                ? Color.FromArgb(0xA8, 0xF1, 0xEA, 0xE2)
-                : Color.FromArgb(0x9C, 0x25, 0x25, 0x25))
+                ? Color.FromArgb(0x72, 0xF4, 0xEE, 0xE6)
+                : Color.FromArgb(0x78, 0x20, 0x20, 0x20))
         };
+        Grid.SetRow(side, 1);
         side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         side.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        var title = new StackPanel { Spacing = 2, Margin = new Thickness(6, 0, 0, 24) };
+        var title = new StackPanel { Spacing = 2, Margin = new Thickness(4, 0, 0, 18) };
         title.Children.Add(new TextBlock
         {
-            Text = "G HUB RGB",
-            FontSize = 14,
+            Text = "Freestyle Injector",
+            FontSize = 18,
             FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
         });
         title.Children.Add(new TextBlock
         {
-            Text = "Freestyle Injector",
+            Text = "Presets RGB para Logitech G HUB",
             FontSize = 12,
             Opacity = 0.68
         });
@@ -135,8 +201,10 @@ public sealed partial class MainWindow : Window
         var search = new TextBox
         {
             PlaceholderText = "Localizar ação",
-            Margin = new Thickness(0, 0, 0, 14),
-            IsTabStop = false
+            IsTabStop = false,
+            CornerRadius = new CornerRadius(18),
+            Height = 36,
+            Margin = new Thickness(0, 0, 0, 14)
         };
         Grid.SetRow(search, 1);
         side.Children.Add(search);
@@ -163,7 +231,7 @@ public sealed partial class MainWindow : Window
         var main = new StackPanel
         {
             Spacing = 18,
-            Padding = new Thickness(28, 24, 32, 32)
+            Padding = new Thickness(28, 18, 32, 32)
         };
 
         main.Children.Add(BuildHeader());
@@ -184,7 +252,7 @@ public sealed partial class MainWindow : Window
         copy.Children.Add(new TextBlock
         {
             Text = "Sincronização RGB",
-            FontSize = 30,
+            FontSize = 32,
             FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
         });
         copy.Children.Add(new TextBlock
@@ -198,18 +266,31 @@ public sealed partial class MainWindow : Window
 
         StatusText = new TextBlock
         {
-            Text = "Pronto para simular.",
-            FontSize = 12,
+            Text = "Pronto para simular",
+            FontSize = 13,
             VerticalAlignment = VerticalAlignment.Center
         };
+        StatusIcon = new FontIcon
+        {
+            Glyph = "\uE73E",
+            FontSize = 15,
+            Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x0E, 0x7A, 0x0D)),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        var statusStack = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8
+        };
+        statusStack.Children.Add(StatusIcon);
+        statusStack.Children.Add(StatusText);
         StatusPanel = new Border
         {
-            Padding = new Thickness(12, 7, 12, 7),
-            CornerRadius = new CornerRadius(999),
-            BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Color.FromArgb(0x22, 0x00, 0x78, 0xD4)),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0x00, 0x78, 0xD4)),
-            Child = StatusText,
+            Padding = new Thickness(10, 5, 10, 5),
+            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(0),
+            Background = new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00)),
+            Child = statusStack,
             VerticalAlignment = VerticalAlignment.Top
         };
         Grid.SetColumn(StatusPanel, 1);
@@ -223,17 +304,31 @@ public sealed partial class MainWindow : Window
 
         InputPathBox = new TextBox
         {
-            Header = "Pasta das paletas",
-            PlaceholderText = @"C:\Caminho\Para\paletas"
+            Visibility = Visibility.Collapsed
         };
-        panel.Children.Add(BuildPickerRow(InputPathBox, "\uE8B7", ChooseInput_Click));
+        InputPathText = BuildPathText();
+        panel.Children.Add(InputPathBox);
+        panel.Children.Add(BuildSettingActionRow(
+            "\uE8B7",
+            "Pasta das paletas",
+            "Diretório com os arquivos Markdown que serão lidos.",
+            InputPathText,
+            "Alterar",
+            ChooseInput_Click));
 
         DbPathBox = new TextBox
         {
-            Header = "settings.db do G HUB",
-            PlaceholderText = @"%LOCALAPPDATA%\LGHUB\settings.db"
+            Visibility = Visibility.Collapsed
         };
-        panel.Children.Add(BuildPickerRow(DbPathBox, "\uE8A5", ChooseDb_Click));
+        DbPathText = BuildPathText();
+        panel.Children.Add(DbPathBox);
+        panel.Children.Add(BuildSettingActionRow(
+            "\uE8A5",
+            "settings.db do G HUB",
+            "Banco SQLite onde o G HUB guarda a configuração local.",
+            DbPathText,
+            "Alterar",
+            ChooseDb_Click));
 
         return BuildCard(panel);
     }
@@ -261,8 +356,8 @@ public sealed partial class MainWindow : Window
         var actions = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            Margin = new Thickness(0, 4, 0, 0)
+            Spacing = 10,
+            Margin = new Thickness(0, 12, 0, 0)
         };
         actions.Children.Add(BuildActionButton("\uE721", "Listar", List_Click));
         actions.Children.Add(BuildActionButton("\uE9D9", "Simular", DryRun_Click));
@@ -283,13 +378,13 @@ public sealed partial class MainWindow : Window
             Opacity = 0.78,
             FontSize = 13
         };
-        panel.Children.Add(InstallStateText);
+        panel.Children.Add(BuildFlatStateRow("\uE946", InstallStateText));
 
         var wizardButtons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 8,
-            Margin = new Thickness(0, 2, 0, 0)
+            Spacing = 10,
+            Margin = new Thickness(0, 8, 0, 0)
         };
         wizardButtons.Children.Add(BuildActionButton("\uE896", "Instalar", Install_Click));
         wizardButtons.Children.Add(BuildActionButton("\uE895", "Atualizar", Update_Click));
@@ -310,7 +405,8 @@ public sealed partial class MainWindow : Window
             TextWrapping = TextWrapping.NoWrap,
             FontFamily = new FontFamily("Cascadia Mono, Consolas"),
             MinHeight = 210,
-            PlaceholderText = "Os logs da execução aparecem aqui."
+            PlaceholderText = "Os logs da execução aparecem aqui.",
+            CornerRadius = new CornerRadius(8)
         };
         ScrollViewer.SetVerticalScrollBarVisibility(OutputBox, ScrollBarVisibility.Auto);
         ScrollViewer.SetHorizontalScrollBarVisibility(OutputBox, ScrollBarVisibility.Auto);
@@ -346,33 +442,99 @@ public sealed partial class MainWindow : Window
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(18),
             Background = new SolidColorBrush(IsLightTheme
-                ? Color.FromArgb(0xD8, 0xFF, 0xFF, 0xFF)
-                : Color.FromArgb(0xCC, 0x2D, 0x2D, 0x2D)),
+                ? Color.FromArgb(0xC4, 0xFF, 0xFF, 0xFF)
+                : Color.FromArgb(0xC0, 0x2C, 0x2C, 0x2C)),
             BorderBrush = new SolidColorBrush(IsLightTheme
-                ? Color.FromArgb(0x40, 0xA8, 0xA0, 0x96)
-                : Color.FromArgb(0x44, 0x75, 0x75, 0x75)),
+                ? Color.FromArgb(0x42, 0xC8, 0xBE, 0xB4)
+                : Color.FromArgb(0x44, 0x78, 0x78, 0x78)),
             Child = content
         };
     }
 
-    private static Grid BuildPickerRow(TextBox textBox, string glyph, RoutedEventHandler clickHandler)
+    private static TextBlock BuildPathText()
     {
-        var row = new Grid { ColumnSpacing = 10 };
+        return new TextBlock
+        {
+            FontSize = 12,
+            Opacity = 0.72,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap
+        };
+    }
+
+    private static UIElement BuildSettingActionRow(
+        string glyph,
+        string title,
+        string description,
+        TextBlock value,
+        string actionText,
+        RoutedEventHandler clickHandler)
+    {
+        var row = new Grid
+        {
+            MinHeight = 72,
+            Padding = new Thickness(0, 8, 0, 8),
+            ColumnSpacing = 16
+        };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        row.Children.Add(textBox);
+
+        row.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontSize = 18,
+            Width = 28,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        var copy = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 14,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 500 }
+        });
+        copy.Children.Add(new TextBlock
+        {
+            Text = description,
+            FontSize = 12,
+            Opacity = 0.68,
+            TextWrapping = TextWrapping.Wrap
+        });
+        copy.Children.Add(value);
+        Grid.SetColumn(copy, 1);
+        row.Children.Add(copy);
 
         var button = new Button
         {
-            Content = new FontIcon { Glyph = glyph, FontSize = 16 },
-            Width = 42,
-            Height = 32,
-            Margin = new Thickness(0, 27, 0, 0)
+            Content = actionText,
+            MinHeight = 32,
+            Padding = new Thickness(14, 5, 14, 5),
+            CornerRadius = new CornerRadius(6),
+            VerticalAlignment = VerticalAlignment.Center
         };
-        ToolTipService.SetToolTip(button, "Escolher");
+        ToolTipService.SetToolTip(button, actionText);
         button.Click += clickHandler;
-        Grid.SetColumn(button, 1);
+        Grid.SetColumn(button, 2);
         row.Children.Add(button);
+        return row;
+    }
+
+    private static UIElement BuildFlatStateRow(string glyph, FrameworkElement content)
+    {
+        var row = new Grid { ColumnSpacing = 14, MinHeight = 42 };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontSize = 17,
+            Width = 24,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        Grid.SetColumn(content, 1);
+        row.Children.Add(content);
         return row;
     }
 
@@ -430,8 +592,9 @@ public sealed partial class MainWindow : Window
         var button = new Button
         {
             Content = content,
-            MinHeight = 34,
-            Padding = new Thickness(12, 6, 12, 6)
+            MinHeight = 36,
+            Padding = new Thickness(14, 7, 14, 7),
+            CornerRadius = new CornerRadius(6)
         };
         if (primary)
         {
@@ -450,7 +613,9 @@ public sealed partial class MainWindow : Window
             Padding = new Thickness(12, 0, 10, 0),
             ColumnSpacing = 12,
             Background = selected
-                ? new SolidColorBrush(Color.FromArgb(0x70, 0xE7, 0xDF, 0xD7))
+                ? new SolidColorBrush(IsLightTheme
+                    ? Color.FromArgb(0x84, 0xEA, 0xE3, 0xDC)
+                    : Color.FromArgb(0x72, 0x3B, 0x3B, 0x3B))
                 : new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00)),
             CornerRadius = new CornerRadius(6)
         };
@@ -547,6 +712,7 @@ public sealed partial class MainWindow : Window
 
         var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         DbPathBox.Text = Path.Combine(localAppData, "LGHUB", "settings.db");
+        RefreshPathLabels();
     }
 
     private async void ChooseInput_Click(object sender, RoutedEventArgs e)
@@ -558,6 +724,7 @@ public sealed partial class MainWindow : Window
         if (folder is not null)
         {
             InputPathBox.Text = folder.Path;
+            RefreshPathLabels();
         }
     }
 
@@ -571,6 +738,20 @@ public sealed partial class MainWindow : Window
         if (file is not null)
         {
             DbPathBox.Text = file.Path;
+            RefreshPathLabels();
+        }
+    }
+
+    private void RefreshPathLabels()
+    {
+        if (InputPathText is not null)
+        {
+            InputPathText.Text = InputPathBox.Text;
+        }
+
+        if (DbPathText is not null)
+        {
+            DbPathText.Text = DbPathBox.Text;
         }
     }
 
@@ -944,6 +1125,18 @@ reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyl
                 Color.FromArgb(0x66, 0x00, 0x78, 0xD4))
         };
 
+        StatusIcon.Glyph = kind switch
+        {
+            StatusKind.Success => "\uE73E",
+            StatusKind.Error => "\uE783",
+            _ => "\uE895"
+        };
+        StatusIcon.Foreground = new SolidColorBrush(kind switch
+        {
+            StatusKind.Success => Color.FromArgb(0xFF, 0x0E, 0x7A, 0x0D),
+            StatusKind.Error => Color.FromArgb(0xFF, 0xC4, 0x2B, 0x1C),
+            _ => Color.FromArgb(0xFF, 0x00, 0x78, 0xD4)
+        });
         StatusPanel.Background = new SolidColorBrush(background);
         StatusPanel.BorderBrush = new SolidColorBrush(border);
     }
