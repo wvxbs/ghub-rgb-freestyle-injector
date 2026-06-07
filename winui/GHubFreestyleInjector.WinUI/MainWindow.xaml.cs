@@ -184,7 +184,6 @@ public sealed partial class MainWindow : Window
     {
         _log.AppendLine(text);
         OutputBox.Text = _log.ToString();
-        FullLogBox.Text = _log.ToString();
     }
 
     private void ClearLog()
@@ -195,7 +194,7 @@ public sealed partial class MainWindow : Window
 
     private void SetBusy(bool busy)
     {
-        RootGrid.IsEnabled = !busy;
+        RootGrid.Opacity = busy ? 0.72 : 1.0;
         StatusBar.Severity = InfoBarSeverity.Informational;
         StatusBar.Title = busy ? "Rodando" : StatusBar.Title;
         StatusBar.Message = busy ? "Executando ghub-freestyle..." : StatusBar.Message;
