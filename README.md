@@ -170,8 +170,11 @@ A organização recomendada é:
 
 - `main`: CLI estável, biblioteca principal e imagem Docker inegociável `wvxbs/ghub-rgb-freestyle-injector`.
 - `feature/windows-gui`: evolução da interface visual, do `.exe` e da imagem web `wvxbs/ghub-rgb-freestyle-injector-gui`.
+- `feature/winui3-shell`: experimento com casca nativa WinUI 3 / Windows App SDK para aproximar o app do paradigma visual do Windows 11.
 
 Manter duas imagens faz sentido se a interface web continuar existindo: a imagem da CLI deve permanecer pequena e previsível; a imagem da interface pode ter servidor, assets e comportamento de app. Para o executável nativo, Docker não agrega muito no uso final. O melhor caminho prático é ter os dois: Compose para desenvolvimento e `.exe` para rodar e esquecer no Windows.
+
+Detalhes da casca WinUI 3 ficam em [docs/winui3-shell.md](docs/winui3-shell.md).
 
 ## Publicação no Docker Hub
 

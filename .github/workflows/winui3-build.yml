@@ -1,0 +1,58 @@
+name: Build WinUI 3 shell
+
+on:
+  push:
+    branches:
+      - feature/winui3-shell
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-winui:
+    name: Build WinUI 3 Windows artifact
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build bundled CLI
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install . pyinstaller
+          pyinstaller --noconfirm --onefile --console --name ghub-freestyle tools/cli_entry.py
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore WinUI project
+        run: dotnet restore winui/GHubFreestyleInjector.WinUI/GHubFreestyleInjector.WinUI.csproj
+
+      - name: Publish WinUI shell
+        run: >
+          dotnet publish winui/GHubFreestyleInjector.WinUI/GHubFreestyleInjector.WinUI.csproj
+          -c Release
+          -r win-x64
+          -p:SelfContained=true
+          -p:WindowsPackageType=None
+          -o artifacts/GHubFreestyleInjector-WinUI3
+
+      - name: Copy bundled CLI into artifact
+        shell: pwsh
+        run: Copy-Item dist/ghub-freestyle.exe artifacts/GHubFreestyleInjector-WinUI3/ghub-freestyle.exe
+
+      - name: Upload WinUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GHubFreestyleInjector-WinUI3-windows-x64
+          path: artifacts/GHubFreestyleInjector-WinUI3/**
