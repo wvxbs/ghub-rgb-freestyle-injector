@@ -191,23 +191,14 @@ public sealed partial class MainWindow : Window
     {
         _log.Clear();
         OutputBox.Text = string.Empty;
-        FullLogBox.Text = string.Empty;
     }
 
     private void SetBusy(bool busy)
     {
-        RootNavigation.IsEnabled = !busy;
+        RootGrid.IsEnabled = !busy;
         StatusBar.Severity = InfoBarSeverity.Informational;
         StatusBar.Title = busy ? "Rodando" : StatusBar.Title;
         StatusBar.Message = busy ? "Executando ghub-freestyle..." : StatusBar.Message;
-    }
-
-    private void RootNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
-    {
-        var tag = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString();
-        SyncPage.Visibility = tag == "sync" ? Visibility.Visible : Visibility.Collapsed;
-        LogsPage.Visibility = tag == "logs" ? Visibility.Visible : Visibility.Collapsed;
-        AboutPage.Visibility = tag == "about" ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private sealed record CliResult(int ExitCode, string Output, string Error)

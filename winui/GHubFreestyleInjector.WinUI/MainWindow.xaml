@@ -7,148 +7,115 @@
     mc:Ignorable="d"
     Title="G HUB RGB Freestyle Injector">
 
-    <Grid Padding="24">
-        <NavigationView
-            x:Name="RootNavigation"
-            IsBackButtonVisible="Collapsed"
-            IsSettingsVisible="False"
-            PaneDisplayMode="LeftCompact"
-            Header="Sincronizar presets"
-            SelectionChanged="RootNavigation_SelectionChanged">
+    <Grid x:Name="RootGrid" Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <NavigationView.MenuItems>
-                <NavigationViewItem Content="Sincronizar" Tag="sync" IsSelected="True" />
-                <NavigationViewItem Content="Logs" Tag="logs" />
-                <NavigationViewItem Content="Sobre" Tag="about" />
-            </NavigationView.MenuItems>
+        <StackPanel Spacing="4">
+            <TextBlock Text="G HUB RGB Freestyle Injector" FontSize="24" FontWeight="SemiBold" />
+            <TextBlock Text="Sincronização de presets Freestyle a partir de arquivos Markdown." TextWrapping="Wrap" Opacity="0.78" />
+        </StackPanel>
 
-            <Grid Padding="24" RowSpacing="16">
+        <InfoBar
+            x:Name="StatusBar"
+            Grid.Row="1"
+            IsOpen="True"
+            Severity="Informational"
+            Title="Pronto"
+            Message="Escolha a pasta de paletas e execute uma simulação antes de aplicar." />
+
+        <Border Grid.Row="2" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Entradas" FontSize="18" FontWeight="SemiBold" />
+
+                <Grid Grid.Row="1" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox
+                        x:Name="InputPathBox"
+                        Header="Pasta das paletas"
+                        PlaceholderText="C:\Caminho\Para\RGB-palettes" />
+                    <Button
+                        Grid.Column="1"
+                        Margin="0,28,0,0"
+                        Content="Escolher"
+                        Click="ChooseInput_Click" />
+                </Grid>
+
+                <Grid Grid.Row="2" ColumnSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBox
+                        x:Name="DbPathBox"
+                        Header="settings.db do G HUB"
+                        PlaceholderText="C:\Users\...\AppData\Local\LGHUB\settings.db" />
+                    <Button
+                        Grid.Column="1"
+                        Margin="0,28,0,0"
+                        Content="Escolher"
+                        Click="ChooseDb_Click" />
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="3" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Opções" FontSize="18" FontWeight="SemiBold" />
+
+                <StackPanel Grid.Row="1" Spacing="8">
+                    <CheckBox x:Name="KillGHubBox" Content="Encerrar G HUB antes de aplicar" IsChecked="True" />
+                    <CheckBox x:Name="ForceBox" Content="Forçar regravação dos presets detectados" />
+                    <CheckBox x:Name="PruneBox" Content="Remover presets RGB órfãos" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                    <Button Content="Listar" Click="List_Click" />
+                    <Button Content="Simular" Click="DryRun_Click" />
+                    <Button Content="Aplicar" Click="Apply_Click" />
+                    <Button Content="Encerrar G HUB" Click="KillGHub_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="4" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
+            <Grid RowSpacing="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-
-                <InfoBar
-                    x:Name="StatusBar"
-                    IsOpen="True"
-                    Severity="Informational"
-                    Title="Pronto"
-                    Message="Escolha a pasta de paletas e execute uma simulação antes de aplicar." />
-
-                <Grid Grid.Row="1">
-                    <Grid x:Name="SyncPage" RowSpacing="16">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <Border BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
-                            <Grid RowSpacing="12">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Text="Entradas" FontSize="18" FontWeight="SemiBold" />
-
-                                <Grid Grid.Row="1" ColumnSpacing="10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox
-                                        x:Name="InputPathBox"
-                                        Header="Pasta das paletas"
-                                        PlaceholderText="C:\Caminho\Para\RGB-palettes" />
-                                    <Button
-                                        Grid.Column="1"
-                                        Margin="0,28,0,0"
-                                        Content="Escolher"
-                                        Click="ChooseInput_Click" />
-                                </Grid>
-
-                                <Grid Grid.Row="2" ColumnSpacing="10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBox
-                                        x:Name="DbPathBox"
-                                        Header="settings.db do G HUB"
-                                        PlaceholderText="C:\Users\...\AppData\Local\LGHUB\settings.db" />
-                                    <Button
-                                        Grid.Column="1"
-                                        Margin="0,28,0,0"
-                                        Content="Escolher"
-                                        Click="ChooseDb_Click" />
-                                </Grid>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Row="1" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="Opções" FontSize="18" FontWeight="SemiBold" />
-                                <CheckBox x:Name="KillGHubBox" Content="Encerrar G HUB antes de aplicar" IsChecked="True" />
-                                <CheckBox x:Name="ForceBox" Content="Forçar regravação dos presets detectados" />
-                                <CheckBox x:Name="PruneBox" Content="Remover presets RGB órfãos" />
-                            </StackPanel>
-                        </Border>
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
-                            <Button Content="Listar" Click="List_Click" />
-                            <Button Content="Simular" Click="DryRun_Click" />
-                            <Button Content="Aplicar" Click="Apply_Click" />
-                            <Button Content="Encerrar G HUB" Click="KillGHub_Click" />
-                        </StackPanel>
-
-                        <Border Grid.Row="3" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
-                            <Grid RowSpacing="10">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                <TextBlock Text="Saída" FontSize="18" FontWeight="SemiBold" />
-                                <TextBox
-                                    x:Name="OutputBox"
-                                    Grid.Row="1"
-                                    AcceptsReturn="True"
-                                    IsReadOnly="True"
-                                    TextWrapping="NoWrap"
-                                    FontFamily="Consolas"
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                    MinHeight="220" />
-                            </Grid>
-                        </Border>
-                    </Grid>
-
-                    <Grid x:Name="LogsPage" Visibility="Collapsed">
-                        <Border BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
-                            <TextBox
-                                x:Name="FullLogBox"
-                                AcceptsReturn="True"
-                                IsReadOnly="True"
-                                TextWrapping="NoWrap"
-                                FontFamily="Consolas"
-                                ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                ScrollViewer.HorizontalScrollBarVisibility="Auto" />
-                        </Border>
-                    </Grid>
-
-                    <Grid x:Name="AboutPage" Visibility="Collapsed">
-                        <Border BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16" MaxWidth="720" HorizontalAlignment="Left" VerticalAlignment="Top">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="G HUB RGB Freestyle Injector" FontSize="22" FontWeight="SemiBold" />
-                                <TextBlock Text="Shell experimental em WinUI 3 para a CLI ghub-freestyle." TextWrapping="Wrap" />
-                                <TextBlock Text="Esta interface usa tema automático do Windows, materiais do Windows App SDK quando disponíveis e mantém o motor Python/CLI separado." TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </Grid>
+                <TextBlock Text="Saída" FontSize="18" FontWeight="SemiBold" />
+                <TextBox
+                    x:Name="OutputBox"
+                    Grid.Row="1"
+                    AcceptsReturn="True"
+                    IsReadOnly="True"
+                    TextWrapping="NoWrap"
+                    FontFamily="Consolas"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                    MinHeight="220" />
             </Grid>
-        </NavigationView>
+        </Border>
     </Grid>
 </Window>
