@@ -56,7 +56,6 @@ jobs:
         env:
           CODESIGN_PFX_BASE64: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 }}
           CODESIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PFX_PASSWORD }}
-          CODESIGN_TRUST_SIGNER_FOR_VERIFY: "true"
         run: >
           ./scripts/sign-windows-artifact.ps1
           -ArtifactDir artifacts/GHubFreestyleInjector-WinUI3

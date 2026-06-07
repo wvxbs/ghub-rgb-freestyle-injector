@@ -6,7 +6,6 @@ param(
     [string]$PfxBase64 = $env:CODESIGN_PFX_BASE64,
     [string]$PfxPassword = $env:CODESIGN_PFX_PASSWORD,
     [string]$TimestampUrl = $(if ($env:CODESIGN_TIMESTAMP_URL) { $env:CODESIGN_TIMESTAMP_URL } else { "http://timestamp.digicert.com" }),
-    [switch]$TrustSignerForVerification = ($env:CODESIGN_TRUST_SIGNER_FOR_VERIFY -match "^(1|true|yes)$"),
     [switch]$SkipTimestamp
 )
 
@@ -61,26 +60,36 @@ function Write-TempPfx {
     return $tempPfx
 }
 
-function Trust-SignerForVerification {
+function Test-EmbeddedSignature {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$CertificatePath,
+        [string]$Target,
 
         [Parameter(Mandatory = $true)]
-        [string]$Password
+        [string]$ExpectedThumbprint,
+
+        [Parameter(Mandatory = $true)]
+        [bool]$RequireTimestamp
     )
 
-    $tempCer = Join-Path ([System.IO.Path]::GetTempPath()) ("ghub-freestyle-codesign-{0}.cer" -f ([Guid]::NewGuid()))
-    $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
-        $CertificatePath,
-        $Password,
-        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
-    )
-    [System.IO.File]::WriteAllBytes($tempCer, $cert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert))
-    Import-Certificate -FilePath $tempCer -CertStoreLocation Cert:\CurrentUser\Root | Out-Null
-    Import-Certificate -FilePath $tempCer -CertStoreLocation Cert:\CurrentUser\TrustedPublisher | Out-Null
-    Remove-Item -LiteralPath $tempCer -Force
-    Write-Host "Signer certificate trusted for verification in the current user store."
+    $signature = Get-AuthenticodeSignature -LiteralPath $Target
+    if (-not $signature.SignerCertificate) {
+        throw "Assinatura ausente: $Target"
+    }
+
+    if ($signature.SignerCertificate.Thumbprint -ne $ExpectedThumbprint) {
+        throw "Assinatura usa certificado inesperado: $Target"
+    }
+
+    if ($signature.Status -in @("NotSigned", "HashMismatch")) {
+        throw "Assinatura invalida em $Target. Status: $($signature.Status)"
+    }
+
+    if ($RequireTimestamp -and -not $signature.TimeStamperCertificate) {
+        throw "Assinatura sem timestamp: $Target"
+    }
+
+    Write-Host "Embedded signature matches expected signer for $Target. Status: $($signature.Status)"
 }
 
 $artifactPath = Resolve-Path -LiteralPath $ArtifactDir -ErrorAction SilentlyContinue
@@ -105,14 +114,15 @@ try {
 
     $pfxFile = Get-RequiredFile -Path $PfxPath
     $signTool = Resolve-SignTool
+    $expectedSigner = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new(
+        $pfxFile,
+        $PfxPassword,
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::EphemeralKeySet
+    )
     $targets = @(
         (Join-Path $artifactPath.Path "GHubFreestyleInjector.WinUI.exe"),
         (Join-Path $artifactPath.Path "ghub-freestyle.exe")
     )
-
-    if ($TrustSignerForVerification) {
-        Trust-SignerForVerification -CertificatePath $pfxFile -Password $PfxPassword
-    }
 
     foreach ($target in $targets) {
         $null = Get-RequiredFile -Path $target
@@ -141,11 +151,13 @@ try {
     foreach ($target in $targets) {
         & $signTool verify /pa /v $target
         if ($LASTEXITCODE -ne 0) {
-            throw "Falha ao verificar assinatura: $target"
+            Write-Warning "signtool verify nao confiou na cadeia do certificado. Validando assinatura embutida."
         }
+
+        Test-EmbeddedSignature -Target $target -ExpectedThumbprint $expectedSigner.Thumbprint -RequireTimestamp (-not $SkipTimestamp)
     }
 
-    Write-Host "Windows executables signed and verified."
+    Write-Host "Windows executables signed and verified as Authenticode binaries."
 }
 finally {
     if ($temporaryPfx -and (Test-Path -LiteralPath $temporaryPfx)) {
