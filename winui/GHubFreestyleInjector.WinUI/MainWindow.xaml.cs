@@ -11,6 +11,7 @@ namespace GHubFreestyleInjector.WinUI;
 public sealed partial class MainWindow : Window
 {
     private readonly StringBuilder _log = new();
+    private Grid RootGrid = null!;
     private InfoBar StatusBar = null!;
     private TextBox InputPathBox = null!;
     private TextBox DbPathBox = null!;
@@ -22,9 +23,10 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
-        App.LogInfo("MainWindow InitializeComponent start");
-        InitializeComponent();
-        App.LogInfo("MainWindow InitializeComponent done");
+        App.LogInfo("MainWindow manual content start");
+        RootGrid = new Grid();
+        Content = RootGrid;
+        App.LogInfo("MainWindow manual content done");
         BuildUi();
         App.LogInfo("MainWindow BuildUi done");
 
