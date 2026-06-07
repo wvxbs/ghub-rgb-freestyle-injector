@@ -7,7 +7,7 @@
     mc:Ignorable="d"
     Title="G HUB RGB Freestyle Injector">
 
-    <Grid>
+    <Grid Padding="24">
         <NavigationView
             x:Name="RootNavigation"
             IsBackButtonVisible="Collapsed"
@@ -17,12 +17,12 @@
             SelectionChanged="RootNavigation_SelectionChanged">
 
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="Sincronizar" Icon="Sync" Tag="sync" IsSelected="True" />
-                <NavigationViewItem Content="Logs" Icon="Document" Tag="logs" />
-                <NavigationViewItem Content="Sobre" Icon="Help" Tag="about" />
+                <NavigationViewItem Content="Sincronizar" Tag="sync" IsSelected="True" />
+                <NavigationViewItem Content="Logs" Tag="logs" />
+                <NavigationViewItem Content="Sobre" Tag="about" />
             </NavigationView.MenuItems>
 
-            <Grid Padding="28" RowSpacing="18">
+            <Grid Padding="24" RowSpacing="16">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -44,7 +44,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <Border Style="{StaticResource CardBorderStyle}">
+                        <Border BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
                             <Grid RowSpacing="12">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -52,7 +52,7 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Text="Entradas" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Entradas" FontSize="18" FontWeight="SemiBold" />
 
                                 <Grid Grid.Row="1" ColumnSpacing="10">
                                     <Grid.ColumnDefinitions>
@@ -88,37 +88,36 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Row="1" Style="{StaticResource CardBorderStyle}">
+                        <Border Grid.Row="1" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="Opções" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Opções" FontSize="18" FontWeight="SemiBold" />
                                 <CheckBox x:Name="KillGHubBox" Content="Encerrar G HUB antes de aplicar" IsChecked="True" />
                                 <CheckBox x:Name="ForceBox" Content="Forçar regravação dos presets detectados" />
                                 <CheckBox x:Name="PruneBox" Content="Remover presets RGB órfãos" />
                             </StackPanel>
                         </Border>
 
-                        <CommandBar Grid.Row="2" DefaultLabelPosition="Right" Background="Transparent">
-                            <AppBarButton Icon="List" Label="Listar" Click="List_Click" />
-                            <AppBarButton Icon="Preview" Label="Simular" Click="DryRun_Click" />
-                            <AppBarButton Icon="Accept" Label="Aplicar" Click="Apply_Click" />
-                            <AppBarSeparator />
-                            <AppBarButton Icon="Cancel" Label="Encerrar G HUB" Click="KillGHub_Click" />
-                        </CommandBar>
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8">
+                            <Button Content="Listar" Click="List_Click" />
+                            <Button Content="Simular" Click="DryRun_Click" />
+                            <Button Content="Aplicar" Click="Apply_Click" />
+                            <Button Content="Encerrar G HUB" Click="KillGHub_Click" />
+                        </StackPanel>
 
-                        <Border Grid.Row="3" Style="{StaticResource CardBorderStyle}">
+                        <Border Grid.Row="3" BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
                             <Grid RowSpacing="10">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="Saída" Style="{StaticResource SubtitleTextBlockStyle}" />
+                                <TextBlock Text="Saída" FontSize="18" FontWeight="SemiBold" />
                                 <TextBox
                                     x:Name="OutputBox"
                                     Grid.Row="1"
                                     AcceptsReturn="True"
                                     IsReadOnly="True"
                                     TextWrapping="NoWrap"
-                                    FontFamily="Cascadia Mono, Consolas"
+                                    FontFamily="Consolas"
                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                     MinHeight="220" />
@@ -127,22 +126,22 @@
                     </Grid>
 
                     <Grid x:Name="LogsPage" Visibility="Collapsed">
-                        <Border Style="{StaticResource CardBorderStyle}">
+                        <Border BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16">
                             <TextBox
                                 x:Name="FullLogBox"
                                 AcceptsReturn="True"
                                 IsReadOnly="True"
                                 TextWrapping="NoWrap"
-                                FontFamily="Cascadia Mono, Consolas"
+                                FontFamily="Consolas"
                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                                 ScrollViewer.HorizontalScrollBarVisibility="Auto" />
                         </Border>
                     </Grid>
 
                     <Grid x:Name="AboutPage" Visibility="Collapsed">
-                        <Border Style="{StaticResource CardBorderStyle}" MaxWidth="720" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <Border BorderBrush="#33666666" BorderThickness="1" CornerRadius="10" Padding="16" MaxWidth="720" HorizontalAlignment="Left" VerticalAlignment="Top">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="G HUB RGB Freestyle Injector" Style="{StaticResource TitleTextBlockStyle}" />
+                                <TextBlock Text="G HUB RGB Freestyle Injector" FontSize="22" FontWeight="SemiBold" />
                                 <TextBlock Text="Shell experimental em WinUI 3 para a CLI ghub-freestyle." TextWrapping="Wrap" />
                                 <TextBlock Text="Esta interface usa tema automático do Windows, materiais do Windows App SDK quando disponíveis e mantém o motor Python/CLI separado." TextWrapping="Wrap" />
                             </StackPanel>
