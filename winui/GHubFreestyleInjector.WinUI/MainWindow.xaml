@@ -7,7 +7,8 @@
     mc:Ignorable="d"
     Title="G HUB RGB Freestyle Injector">
 
-    <Grid x:Name="RootGrid" Padding="24" RowSpacing="16">
+    <Border Padding="24">
+        <Grid x:Name="RootGrid" RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -117,5 +118,6 @@
                     MinHeight="220" />
             </Grid>
         </Border>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>
