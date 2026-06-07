@@ -4,10 +4,13 @@ namespace GHubFreestyleInjector.WinUI;
 
 public partial class App : Application
 {
+    private static App? s_current;
+    private static Window? s_mainWindow;
     private Window? _window;
 
     public App()
     {
+        s_current = this;
         LogInfo("App constructor start");
         UnhandledException += App_UnhandledException;
 
@@ -31,6 +34,7 @@ public partial class App : Application
         {
             LogInfo("MainWindow constructor start");
             _window = new MainWindow();
+            s_mainWindow = _window;
             LogInfo("MainWindow constructor done");
             _window.Activate();
             LogInfo("Window Activate done");
@@ -45,6 +49,12 @@ public partial class App : Application
     private static void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         LogCrash(e.Exception);
+    }
+
+    internal static void KeepAlive()
+    {
+        GC.KeepAlive(s_current);
+        GC.KeepAlive(s_mainWindow);
     }
 
     internal static void LogInfo(string message)

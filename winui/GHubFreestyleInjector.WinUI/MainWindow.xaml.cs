@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.Storage.Pickers;
+using Windows.Graphics;
 using WinRT.Interop;
 
 namespace GHubFreestyleInjector.WinUI;
@@ -13,7 +14,8 @@ public sealed partial class MainWindow : Window
 {
     private readonly StringBuilder _log = new();
     private Grid RootGrid = null!;
-    private InfoBar StatusBar = null!;
+    private Border StatusPanel = null!;
+    private TextBlock StatusText = null!;
     private TextBox InputPathBox = null!;
     private TextBox DbPathBox = null!;
     private TextBox OutputBox = null!;
@@ -26,15 +28,26 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         App.LogInfo("MainWindow manual content start");
-        RootGrid = new Grid();
-        Content = RootGrid;
+        Closed += (_, _) =>
+        {
+            App.LogInfo("MainWindow closed");
+            App.KeepAlive();
+        };
+        Title = "G HUB RGB Freestyle Injector";
+        RootGrid = BuildRootGrid();
+        Content = new ScrollViewer
+        {
+            Content = RootGrid,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
         App.LogInfo("MainWindow manual content done");
         BuildUi();
         App.LogInfo("MainWindow BuildUi done");
 
         _hwnd = WindowNative.GetWindowHandle(this);
         App.LogInfo($"HWND acquired: {_hwnd}");
-        ExtendsContentIntoTitleBar = true;
+        InitializeWindowChrome();
         TryApplyBackdrop();
         App.LogInfo("Backdrop step done");
         InitializeDefaults();
@@ -42,11 +55,48 @@ public sealed partial class MainWindow : Window
         App.LogInfo("Defaults initialized");
     }
 
+    private static Grid BuildRootGrid()
+    {
+        var grid = new Grid
+        {
+            Margin = new Thickness(24),
+            Padding = new Thickness(0, 0, 0, 24),
+            RowSpacing = 16,
+            MinWidth = 720,
+            Background = ResolvePageBackground()
+        };
+        return grid;
+    }
+
+    private static Brush ResolvePageBackground()
+    {
+        if (Application.Current.Resources.TryGetValue("ApplicationPageBackgroundThemeBrush", out var brush) &&
+            brush is Brush themeBrush)
+        {
+            return themeBrush;
+        }
+
+        return new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
+    }
+
+    private void InitializeWindowChrome()
+    {
+        ExtendsContentIntoTitleBar = false;
+        try
+        {
+            AppWindow.Title = "G HUB RGB Freestyle Injector";
+            AppWindow.Resize(new SizeInt32(1120, 900));
+            App.LogInfo($"Window chrome initialized. AppWindowId={AppWindow.Id.Value}");
+        }
+        catch (Exception ex)
+        {
+            App.LogInfo("Window chrome fallback: " + ex.Message);
+        }
+    }
+
 
     private void BuildUi()
     {
-        RootGrid.Margin = new Thickness(24);
-        RootGrid.RowSpacing = 16;
         RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -69,15 +119,22 @@ public sealed partial class MainWindow : Window
         });
         RootGrid.Children.Add(header);
 
-        StatusBar = new InfoBar
+        StatusText = new TextBlock
         {
-            IsOpen = true,
-            Severity = InfoBarSeverity.Informational,
-            Title = "Pronto",
-            Message = "Escolha a pasta de paletas e execute uma simulação antes de aplicar."
+            Text = "Pronto: escolha a pasta de paletas e execute uma simulação antes de aplicar.",
+            TextWrapping = TextWrapping.Wrap
         };
-        Grid.SetRow(StatusBar, 1);
-        RootGrid.Children.Add(StatusBar);
+        StatusPanel = new Border
+        {
+            Padding = new Thickness(14, 10, 14, 10),
+            CornerRadius = new CornerRadius(6),
+            BorderThickness = new Thickness(1),
+            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x18, 0x00, 0x78, 0xD4)),
+            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0x66, 0x00, 0x78, 0xD4)),
+            Child = StatusText
+        };
+        Grid.SetRow(StatusPanel, 1);
+        RootGrid.Children.Add(StatusPanel);
 
         var installPanel = new StackPanel { Spacing = 12 };
         installPanel.Children.Add(new TextBlock
@@ -216,6 +273,12 @@ public sealed partial class MainWindow : Window
 
     private void TryApplyBackdrop()
     {
+        if (!string.Equals(Environment.GetEnvironmentVariable("GHUB_WINUI_BACKDROP"), "1", StringComparison.Ordinal))
+        {
+            App.LogInfo("Backdrop disabled by default");
+            return;
+        }
+
         try
         {
             SystemBackdrop = new MicaBackdrop();
@@ -326,16 +389,12 @@ public sealed partial class MainWindow : Window
             AppendLog($"{action}: iniciando.");
             await Task.Run(work);
             RefreshInstallState();
-            StatusBar.Severity = InfoBarSeverity.Success;
-            StatusBar.Title = "Instalação";
-            StatusBar.Message = $"{action} concluído.";
+            SetStatus("Instalação", $"{action} concluído.", StatusKind.Success);
             AppendLog($"{action}: concluído.");
         }
         catch (Exception ex)
         {
-            StatusBar.Severity = InfoBarSeverity.Error;
-            StatusBar.Title = "Instalação";
-            StatusBar.Message = ex.Message;
+            SetStatus("Instalação", ex.Message, StatusKind.Error);
             AppendLog($"{action}: erro: {ex}");
         }
         finally
@@ -543,16 +602,15 @@ reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyl
 
             var result = await Task.Run(() => ExecuteCli(fullArgs));
             AppendLog(result);
-            StatusBar.Severity = result.ExitCode == 0 ? InfoBarSeverity.Success : InfoBarSeverity.Error;
-            StatusBar.Title = result.ExitCode == 0 ? "Concluído" : "Falhou";
-            StatusBar.Message = $"ghub-freestyle terminou com código {result.ExitCode}.";
+            SetStatus(
+                result.ExitCode == 0 ? "Concluído" : "Falhou",
+                $"ghub-freestyle terminou com código {result.ExitCode}.",
+                result.ExitCode == 0 ? StatusKind.Success : StatusKind.Error);
         }
         catch (Exception ex)
         {
             AppendLog("ERRO: " + ex);
-            StatusBar.Severity = InfoBarSeverity.Error;
-            StatusBar.Title = "Erro";
-            StatusBar.Message = ex.Message;
+            SetStatus("Erro", ex.Message, StatusKind.Error);
         }
         finally
         {
@@ -619,9 +677,38 @@ reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyl
     private void SetBusy(bool busy)
     {
         RootGrid.Opacity = busy ? 0.72 : 1.0;
-        StatusBar.Severity = InfoBarSeverity.Informational;
-        StatusBar.Title = busy ? "Rodando" : StatusBar.Title;
-        StatusBar.Message = busy ? "Executando ghub-freestyle..." : StatusBar.Message;
+        if (busy)
+        {
+            SetStatus("Rodando", "Executando ghub-freestyle...", StatusKind.Info);
+        }
+    }
+
+    private void SetStatus(string title, string message, StatusKind kind)
+    {
+        StatusText.Text = $"{title}: {message}";
+
+        var (background, border) = kind switch
+        {
+            StatusKind.Success => (
+                Windows.UI.Color.FromArgb(0x18, 0x10, 0x7C, 0x10),
+                Windows.UI.Color.FromArgb(0x66, 0x10, 0x7C, 0x10)),
+            StatusKind.Error => (
+                Windows.UI.Color.FromArgb(0x18, 0xC4, 0x2B, 0x1C),
+                Windows.UI.Color.FromArgb(0x66, 0xC4, 0x2B, 0x1C)),
+            _ => (
+                Windows.UI.Color.FromArgb(0x18, 0x00, 0x78, 0xD4),
+                Windows.UI.Color.FromArgb(0x66, 0x00, 0x78, 0xD4))
+        };
+
+        StatusPanel.Background = new SolidColorBrush(background);
+        StatusPanel.BorderBrush = new SolidColorBrush(border);
+    }
+
+    private enum StatusKind
+    {
+        Info,
+        Success,
+        Error
     }
 
     private sealed record CliResult(int ExitCode, string Output, string Error)
