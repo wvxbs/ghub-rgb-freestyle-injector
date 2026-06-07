@@ -4,8 +4,9 @@ using Microsoft.Win32;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Windows.Storage.Pickers;
 using Windows.Graphics;
+using Windows.Storage.Pickers;
+using Windows.UI;
 using WinRT.Interop;
 
 namespace GHubFreestyleInjector.WinUI;
@@ -20,9 +21,9 @@ public sealed partial class MainWindow : Window
     private TextBox DbPathBox = null!;
     private TextBox OutputBox = null!;
     private TextBlock InstallStateText = null!;
-    private CheckBox KillGHubBox = null!;
-    private CheckBox ForceBox = null!;
-    private CheckBox PruneBox = null!;
+    private ToggleSwitch KillGHubBox = null!;
+    private ToggleSwitch ForceBox = null!;
+    private ToggleSwitch PruneBox = null!;
     private readonly IntPtr _hwnd;
 
     public MainWindow()
@@ -33,15 +34,10 @@ public sealed partial class MainWindow : Window
             App.LogInfo("MainWindow closed");
             App.KeepAlive();
         };
+
         Title = "G HUB RGB Freestyle Injector";
         RootGrid = BuildRootGrid();
-        Content = new ScrollViewer
-        {
-            Content = RootGrid,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-        };
-        App.LogInfo("MainWindow manual content done");
+        Content = RootGrid;
         BuildUi();
         App.LogInfo("MainWindow BuildUi done");
 
@@ -59,24 +55,21 @@ public sealed partial class MainWindow : Window
     {
         var grid = new Grid
         {
-            Margin = new Thickness(24),
-            Padding = new Thickness(0, 0, 0, 24),
-            RowSpacing = 16,
-            MinWidth = 720,
-            Background = ResolvePageBackground()
+            MinWidth = 900,
+            MinHeight = 640,
+            ColumnSpacing = 0,
+            Background = new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00))
         };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(292) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         return grid;
     }
 
     private static Brush ResolvePageBackground()
     {
-        if (Application.Current.Resources.TryGetValue("ApplicationPageBackgroundThemeBrush", out var brush) &&
-            brush is Brush themeBrush)
-        {
-            return themeBrush;
-        }
-
-        return new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x20, 0x20, 0x20));
+        return new SolidColorBrush(IsLightTheme
+            ? Color.FromArgb(0xE8, 0xF8, 0xF4, 0xEF)
+            : Color.FromArgb(0xE8, 0x20, 0x20, 0x20));
     }
 
     private void InitializeWindowChrome()
@@ -85,7 +78,7 @@ public sealed partial class MainWindow : Window
         try
         {
             AppWindow.Title = "G HUB RGB Freestyle Injector";
-            AppWindow.Resize(new SizeInt32(1120, 900));
+            AppWindow.Resize(new SizeInt32(1160, 820));
             App.LogInfo($"Window chrome initialized. AppWindowId={AppWindow.Id.Value}");
         }
         catch (Exception ex)
@@ -94,158 +87,275 @@ public sealed partial class MainWindow : Window
         }
     }
 
-
     private void BuildUi()
     {
-        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        RootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        RootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        var shellBackground = ResolvePageBackground();
+        RootGrid.Children.Add(BuildSidebar());
 
-        var header = new StackPanel { Spacing = 4 };
-        header.Children.Add(new TextBlock
+        var scroll = new ScrollViewer
         {
-            Text = "G HUB RGB Freestyle Injector",
-            FontSize = 24,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Background = shellBackground,
+            Content = BuildMainSurface()
+        };
+        Grid.SetColumn(scroll, 1);
+        RootGrid.Children.Add(scroll);
+    }
+
+    private UIElement BuildSidebar()
+    {
+        var side = new Grid
+        {
+            Padding = new Thickness(14, 18, 12, 18),
+            Background = new SolidColorBrush(IsLightTheme
+                ? Color.FromArgb(0xA8, 0xF1, 0xEA, 0xE2)
+                : Color.FromArgb(0x9C, 0x25, 0x25, 0x25))
+        };
+        side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        side.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var title = new StackPanel { Spacing = 2, Margin = new Thickness(6, 0, 0, 24) };
+        title.Children.Add(new TextBlock
+        {
+            Text = "G HUB RGB",
+            FontSize = 14,
             FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
         });
-        header.Children.Add(new TextBlock
+        title.Children.Add(new TextBlock
         {
-            Text = "Sincronização de presets Freestyle a partir de arquivos Markdown.",
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.78
+            Text = "Freestyle Injector",
+            FontSize = 12,
+            Opacity = 0.68
         });
-        RootGrid.Children.Add(header);
+        side.Children.Add(title);
+
+        var search = new TextBox
+        {
+            PlaceholderText = "Localizar ação",
+            Margin = new Thickness(0, 0, 0, 14),
+            IsTabStop = false
+        };
+        Grid.SetRow(search, 1);
+        side.Children.Add(search);
+
+        var nav = new StackPanel { Spacing = 4 };
+        nav.Children.Add(BuildNavItem("\uE895", "Sincronização", selected: true));
+        nav.Children.Add(BuildNavItem("\uE7B8", "Instalação"));
+        nav.Children.Add(BuildNavItem("\uE8A7", "Logs"));
+        nav.Children.Add(BuildNavItem("\uE713", "Configurações"));
+        Grid.SetRow(nav, 2);
+        side.Children.Add(nav);
+
+        var footer = new StackPanel { Spacing = 4, Margin = new Thickness(4, 0, 0, 0) };
+        footer.Children.Add(BuildSmallFooter("\uE946", "CLI local"));
+        footer.Children.Add(BuildSmallFooter("\uE930", "G HUB settings.db"));
+        Grid.SetRow(footer, 3);
+        side.Children.Add(footer);
+
+        return side;
+    }
+
+    private UIElement BuildMainSurface()
+    {
+        var main = new StackPanel
+        {
+            Spacing = 18,
+            Padding = new Thickness(28, 24, 32, 32)
+        };
+
+        main.Children.Add(BuildHeader());
+        main.Children.Add(BuildInputCard());
+        main.Children.Add(BuildOperationCard());
+        main.Children.Add(BuildInstallCard());
+        main.Children.Add(BuildOutputCard());
+        return main;
+    }
+
+    private UIElement BuildHeader()
+    {
+        var header = new Grid { ColumnSpacing = 18 };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var copy = new StackPanel { Spacing = 5 };
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Sincronização RGB",
+            FontSize = 30,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
+        });
+        copy.Children.Add(new TextBlock
+        {
+            Text = "Crie, atualize e reaplique presets Freestyle do G HUB a partir dos seus arquivos Markdown.",
+            FontSize = 13,
+            Opacity = 0.76,
+            TextWrapping = TextWrapping.Wrap
+        });
+        header.Children.Add(copy);
 
         StatusText = new TextBlock
         {
-            Text = "Pronto: escolha a pasta de paletas e execute uma simulação antes de aplicar.",
-            TextWrapping = TextWrapping.Wrap
+            Text = "Pronto para simular.",
+            FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center
         };
         StatusPanel = new Border
         {
-            Padding = new Thickness(14, 10, 14, 10),
-            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(12, 7, 12, 7),
+            CornerRadius = new CornerRadius(999),
             BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x18, 0x00, 0x78, 0xD4)),
-            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0x66, 0x00, 0x78, 0xD4)),
-            Child = StatusText
+            Background = new SolidColorBrush(Color.FromArgb(0x22, 0x00, 0x78, 0xD4)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0x00, 0x78, 0xD4)),
+            Child = StatusText,
+            VerticalAlignment = VerticalAlignment.Top
         };
-        Grid.SetRow(StatusPanel, 1);
-        RootGrid.Children.Add(StatusPanel);
+        Grid.SetColumn(StatusPanel, 1);
+        header.Children.Add(StatusPanel);
+        return header;
+    }
 
-        var installPanel = new StackPanel { Spacing = 12 };
-        installPanel.Children.Add(new TextBlock
-        {
-            Text = "Instalação",
-            FontSize = 18,
-            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
-        });
-        InstallStateText = new TextBlock
-        {
-            TextWrapping = TextWrapping.Wrap,
-            Opacity = 0.78
-        };
-        installPanel.Children.Add(InstallStateText);
-
-        var wizardButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        wizardButtons.Children.Add(BuildWizardButton("Instalar", Install_Click));
-        wizardButtons.Children.Add(BuildWizardButton("Atualizar", Update_Click));
-        wizardButtons.Children.Add(BuildWizardButton("Reparar", Repair_Click));
-        wizardButtons.Children.Add(BuildWizardButton("Desinstalar", Uninstall_Click));
-        installPanel.Children.Add(wizardButtons);
-
-        var installBorder = BuildPanel(installPanel);
-        Grid.SetRow(installBorder, 2);
-        RootGrid.Children.Add(installBorder);
-
-        var inputPanel = new StackPanel { Spacing = 12 };
-        inputPanel.Children.Add(new TextBlock
-        {
-            Text = "Entradas",
-            FontSize = 18,
-            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
-        });
+    private UIElement BuildInputCard()
+    {
+        var panel = BuildCardStack("Entradas", "Escolha a pasta das paletas e o banco de dados do G HUB.");
 
         InputPathBox = new TextBox
         {
             Header = "Pasta das paletas",
-            PlaceholderText = @"C:\Caminho\Para\RGB-palettes"
+            PlaceholderText = @"C:\Caminho\Para\paletas"
         };
-        inputPanel.Children.Add(BuildPickerRow(InputPathBox, ChooseInput_Click));
+        panel.Children.Add(BuildPickerRow(InputPathBox, "\uE8B7", ChooseInput_Click));
 
         DbPathBox = new TextBox
         {
             Header = "settings.db do G HUB",
-            PlaceholderText = @"C:\Users\...\AppData\Local\LGHUB\settings.db"
+            PlaceholderText = @"%LOCALAPPDATA%\LGHUB\settings.db"
         };
-        inputPanel.Children.Add(BuildPickerRow(DbPathBox, ChooseDb_Click));
+        panel.Children.Add(BuildPickerRow(DbPathBox, "\uE8A5", ChooseDb_Click));
 
-        var inputBorder = BuildPanel(inputPanel);
-        Grid.SetRow(inputBorder, 3);
-        RootGrid.Children.Add(inputBorder);
+        return BuildCard(panel);
+    }
 
-        KillGHubBox = new CheckBox { Content = "Encerrar G HUB antes de aplicar", IsChecked = true };
-        ForceBox = new CheckBox { Content = "Forçar regravação dos presets detectados" };
-        PruneBox = new CheckBox { Content = "Remover presets RGB órfãos" };
+    private UIElement BuildOperationCard()
+    {
+        var panel = BuildCardStack("Operação", "Controle o que será feito quando a CLI rodar.");
 
-        var optionsPanel = new StackPanel { Spacing = 12 };
-        optionsPanel.Children.Add(new TextBlock
+        var options = new StackPanel { Spacing = 1 };
+        KillGHubBox = BuildSettingToggle(
+            options,
+            "Encerrar G HUB",
+            "Fecha o G HUB antes de gravar presets para evitar conflito com o banco de dados.",
+            isOn: true);
+        ForceBox = BuildSettingToggle(
+            options,
+            "Forçar regravação",
+            "Substitui presets gerenciados já detectados, mesmo sem mudança nos arquivos Markdown.");
+        PruneBox = BuildSettingToggle(
+            options,
+            "Limpar órfãos",
+            "Remove presets gerenciados que não têm mais um arquivo Markdown correspondente.");
+        panel.Children.Add(options);
+
+        var actions = new StackPanel
         {
-            Text = "Opções",
-            FontSize = 18,
-            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
-        });
-        optionsPanel.Children.Add(KillGHubBox);
-        optionsPanel.Children.Add(ForceBox);
-        optionsPanel.Children.Add(PruneBox);
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+        actions.Children.Add(BuildActionButton("\uE721", "Listar", List_Click));
+        actions.Children.Add(BuildActionButton("\uE9D9", "Simular", DryRun_Click));
+        actions.Children.Add(BuildActionButton("\uE73E", "Aplicar", Apply_Click, primary: true));
+        actions.Children.Add(BuildActionButton("\uE711", "Encerrar G HUB", KillGHub_Click));
+        panel.Children.Add(actions);
 
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        buttons.Children.Add(new Button { Content = "Listar" });
-        ((Button)buttons.Children[^1]).Click += List_Click;
-        buttons.Children.Add(new Button { Content = "Simular" });
-        ((Button)buttons.Children[^1]).Click += DryRun_Click;
-        buttons.Children.Add(new Button { Content = "Aplicar" });
-        ((Button)buttons.Children[^1]).Click += Apply_Click;
-        buttons.Children.Add(new Button { Content = "Encerrar G HUB" });
-        ((Button)buttons.Children[^1]).Click += KillGHub_Click;
-        optionsPanel.Children.Add(buttons);
+        return BuildCard(panel);
+    }
 
-        var optionsBorder = BuildPanel(optionsPanel);
-        Grid.SetRow(optionsBorder, 4);
-        RootGrid.Children.Add(optionsBorder);
+    private UIElement BuildInstallCard()
+    {
+        var panel = BuildCardStack("Instalação", "Gerencie a cópia instalada no perfil do usuário.");
 
+        InstallStateText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Opacity = 0.78,
+            FontSize = 13
+        };
+        panel.Children.Add(InstallStateText);
+
+        var wizardButtons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Margin = new Thickness(0, 2, 0, 0)
+        };
+        wizardButtons.Children.Add(BuildActionButton("\uE896", "Instalar", Install_Click));
+        wizardButtons.Children.Add(BuildActionButton("\uE895", "Atualizar", Update_Click));
+        wizardButtons.Children.Add(BuildActionButton("\uE90F", "Reparar", Repair_Click));
+        wizardButtons.Children.Add(BuildActionButton("\uE74D", "Desinstalar", Uninstall_Click));
+        panel.Children.Add(wizardButtons);
+
+        return BuildCard(panel);
+    }
+
+    private UIElement BuildOutputCard()
+    {
+        var panel = BuildCardStack("Saída", "Acompanhe exatamente o que a CLI retornou.");
         OutputBox = new TextBox
         {
-            Header = "Saída",
             AcceptsReturn = true,
             IsReadOnly = true,
             TextWrapping = TextWrapping.NoWrap,
-            FontFamily = new FontFamily("Consolas"),
-            MinHeight = 220
+            FontFamily = new FontFamily("Cascadia Mono, Consolas"),
+            MinHeight = 210,
+            PlaceholderText = "Os logs da execução aparecem aqui."
         };
         ScrollViewer.SetVerticalScrollBarVisibility(OutputBox, ScrollBarVisibility.Auto);
         ScrollViewer.SetHorizontalScrollBarVisibility(OutputBox, ScrollBarVisibility.Auto);
-        var outputBorder = BuildPanel(OutputBox);
-        Grid.SetRow(outputBorder, 5);
-        RootGrid.Children.Add(outputBorder);
+        panel.Children.Add(OutputBox);
+        return BuildCard(panel);
     }
 
-    private static Border BuildPanel(UIElement content)
+    private static StackPanel BuildCardStack(string title, string subtitle)
+    {
+        var stack = new StackPanel { Spacing = 12 };
+        stack.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 18,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 600 }
+        });
+        stack.Children.Add(new TextBlock
+        {
+            Text = subtitle,
+            FontSize = 12,
+            Opacity = 0.66,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, -8, 0, 0)
+        });
+        return stack;
+    }
+
+    private static Border BuildCard(UIElement content)
     {
         return new Border
         {
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(16),
-            BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0x66, 0x66, 0x66)),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(18),
+            Background = new SolidColorBrush(IsLightTheme
+                ? Color.FromArgb(0xD8, 0xFF, 0xFF, 0xFF)
+                : Color.FromArgb(0xCC, 0x2D, 0x2D, 0x2D)),
+            BorderBrush = new SolidColorBrush(IsLightTheme
+                ? Color.FromArgb(0x40, 0xA8, 0xA0, 0x96)
+                : Color.FromArgb(0x44, 0x75, 0x75, 0x75)),
             Child = content
         };
     }
 
-    private static Grid BuildPickerRow(TextBox textBox, RoutedEventHandler clickHandler)
+    private static Grid BuildPickerRow(TextBox textBox, string glyph, RoutedEventHandler clickHandler)
     {
         var row = new Grid { ColumnSpacing = 10 };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -254,44 +364,179 @@ public sealed partial class MainWindow : Window
 
         var button = new Button
         {
-            Content = "Escolher",
-            Margin = new Thickness(0, 28, 0, 0)
+            Content = new FontIcon { Glyph = glyph, FontSize = 16 },
+            Width = 42,
+            Height = 32,
+            Margin = new Thickness(0, 27, 0, 0)
         };
+        ToolTipService.SetToolTip(button, "Escolher");
         button.Click += clickHandler;
         Grid.SetColumn(button, 1);
         row.Children.Add(button);
         return row;
     }
 
-
-    private static Button BuildWizardButton(string text, RoutedEventHandler clickHandler)
+    private static ToggleSwitch BuildSettingToggle(StackPanel host, string title, string description, bool isOn = false)
     {
-        var button = new Button { Content = text };
+        var row = new Grid
+        {
+            MinHeight = 58,
+            Padding = new Thickness(0, 8, 0, 8),
+            ColumnSpacing = 18
+        };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var copy = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        copy.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 13,
+            FontWeight = new Windows.UI.Text.FontWeight { Weight = 500 }
+        });
+        copy.Children.Add(new TextBlock
+        {
+            Text = description,
+            FontSize = 12,
+            Opacity = 0.68,
+            TextWrapping = TextWrapping.Wrap
+        });
+        row.Children.Add(copy);
+
+        var toggle = new ToggleSwitch
+        {
+            IsOn = isOn,
+            OnContent = string.Empty,
+            OffContent = string.Empty,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(toggle, 1);
+        row.Children.Add(toggle);
+        host.Children.Add(row);
+        return toggle;
+    }
+
+    private static Button BuildActionButton(string glyph, string text, RoutedEventHandler clickHandler, bool primary = false)
+    {
+        var content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.Children.Add(new FontIcon { Glyph = glyph, FontSize = 15 });
+        content.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+
+        var button = new Button
+        {
+            Content = content,
+            MinHeight = 34,
+            Padding = new Thickness(12, 6, 12, 6)
+        };
+        if (primary)
+        {
+            button.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
+        }
+
         button.Click += clickHandler;
         return button;
     }
 
+    private static UIElement BuildNavItem(string glyph, string text, bool selected = false)
+    {
+        var row = new Grid
+        {
+            Height = 38,
+            Padding = new Thickness(12, 0, 10, 0),
+            ColumnSpacing = 12,
+            Background = selected
+                ? new SolidColorBrush(Color.FromArgb(0x70, 0xE7, 0xDF, 0xD7))
+                : new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00)),
+            CornerRadius = new CornerRadius(6)
+        };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        row.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontSize = 16,
+            VerticalAlignment = VerticalAlignment.Center,
+            Foreground = selected
+                ? new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD4))
+                : null
+        });
+        var label = new TextBlock
+        {
+            Text = text,
+            FontSize = 13,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(label, 1);
+        row.Children.Add(label);
+
+        return row;
+    }
+
+    private static bool IsLightTheme
+    {
+        get
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+                return !Equals(key?.GetValue("AppsUseLightTheme"), 0);
+            }
+            catch
+            {
+                return true;
+            }
+        }
+    }
+
+    private static UIElement BuildSmallFooter(string glyph, string text)
+    {
+        var row = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            Padding = new Thickness(8, 8, 8, 8)
+        };
+        row.Children.Add(new FontIcon { Glyph = glyph, FontSize = 14, Opacity = 0.76 });
+        row.Children.Add(new TextBlock
+        {
+            Text = text,
+            FontSize = 12,
+            Opacity = 0.78,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        return row;
+    }
+
     private void TryApplyBackdrop()
     {
-        if (!string.Equals(Environment.GetEnvironmentVariable("GHUB_WINUI_BACKDROP"), "1", StringComparison.Ordinal))
+        if (string.Equals(Environment.GetEnvironmentVariable("GHUB_WINUI_BACKDROP"), "0", StringComparison.Ordinal))
         {
-            App.LogInfo("Backdrop disabled by default");
+            App.LogInfo("Backdrop disabled by GHUB_WINUI_BACKDROP=0");
             return;
         }
 
         try
         {
             SystemBackdrop = new MicaBackdrop();
+            App.LogInfo("Mica backdrop enabled");
         }
-        catch
+        catch (Exception ex)
         {
+            App.LogInfo("Mica backdrop fallback: " + ex.Message);
             try
             {
                 SystemBackdrop = new DesktopAcrylicBackdrop();
+                App.LogInfo("Acrylic backdrop enabled");
             }
-            catch
+            catch (Exception acrylicEx)
             {
-                // Older Windows builds can still render the normal WinUI surface.
+                App.LogInfo("Acrylic backdrop unavailable: " + acrylicEx.Message);
             }
         }
     }
@@ -328,7 +573,6 @@ public sealed partial class MainWindow : Window
             DbPathBox.Text = file.Path;
         }
     }
-
 
     private async void Install_Click(object sender, RoutedEventArgs e)
     {
@@ -571,9 +815,9 @@ reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyl
     private async void Apply_Click(object sender, RoutedEventArgs e)
     {
         var args = new List<string> { "sync" };
-        if (KillGHubBox.IsChecked == true) args.Add("--kill-ghub");
-        if (ForceBox.IsChecked == true) args.Add("--force");
-        if (PruneBox.IsChecked == true) args.Add("--prune");
+        if (KillGHubBox.IsOn) args.Add("--kill-ghub");
+        if (ForceBox.IsOn) args.Add("--force");
+        if (PruneBox.IsOn) args.Add("--prune");
         await RunCliAsync(args.ToArray());
     }
 
@@ -690,14 +934,14 @@ reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyl
         var (background, border) = kind switch
         {
             StatusKind.Success => (
-                Windows.UI.Color.FromArgb(0x18, 0x10, 0x7C, 0x10),
-                Windows.UI.Color.FromArgb(0x66, 0x10, 0x7C, 0x10)),
+                Color.FromArgb(0x24, 0x10, 0x7C, 0x10),
+                Color.FromArgb(0x72, 0x10, 0x7C, 0x10)),
             StatusKind.Error => (
-                Windows.UI.Color.FromArgb(0x18, 0xC4, 0x2B, 0x1C),
-                Windows.UI.Color.FromArgb(0x66, 0xC4, 0x2B, 0x1C)),
+                Color.FromArgb(0x24, 0xC4, 0x2B, 0x1C),
+                Color.FromArgb(0x72, 0xC4, 0x2B, 0x1C)),
             _ => (
-                Windows.UI.Color.FromArgb(0x18, 0x00, 0x78, 0xD4),
-                Windows.UI.Color.FromArgb(0x66, 0x00, 0x78, 0xD4))
+                Color.FromArgb(0x22, 0x00, 0x78, 0xD4),
+                Color.FromArgb(0x66, 0x00, 0x78, 0xD4))
         };
 
         StatusPanel.Background = new SolidColorBrush(background);
