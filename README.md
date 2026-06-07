@@ -120,7 +120,7 @@ O workflow `Build GUI artifacts` gera o artifact:
 GHubFreestyleInjector-windows-x64
 ```
 
-Por enquanto o formato é `.exe`, não `.msi`. Para esta ferramenta, o `.exe` faz mais sentido: é portátil, não precisa instalar nada e reduz a chance de dor de cabeça em máquina recém-formatada. Um `.msi` só passaria a valer a pena se o projeto precisasse de instalador, atalhos no menu iniciar, atualização automática ou associação de arquivos.
+Para a interface Tkinter, o formato portátil `.exe` continua fazendo sentido. Para a branch WinUI 3, o projeto agora segue outro caminho: o app inclui um wizard de instalação por usuário com ações de instalar, atualizar, reparar e desinstalar. Essa diferença existe porque o WinUI/Windows App SDK se comporta melhor como aplicativo instalado, especialmente quando o Windows aplica políticas de reputação e controle de aplicativos.
 
 Localmente, em um Windows com Python instalado, a GUI pode ser aberta com:
 
@@ -174,7 +174,7 @@ A organização recomendada é:
 
 Manter duas imagens faz sentido se a interface web continuar existindo: a imagem da CLI deve permanecer pequena e previsível; a imagem da interface pode ter servidor, assets e comportamento de app. Para o executável nativo, Docker não agrega muito no uso final. O melhor caminho prático é ter os dois: Compose para desenvolvimento e `.exe` para rodar e esquecer no Windows.
 
-Detalhes da casca WinUI 3 ficam em [docs/winui3-shell.md](docs/winui3-shell.md).
+Detalhes da casca WinUI 3, incluindo o wizard de instalação, ficam em [docs/winui3-shell.md](docs/winui3-shell.md).
 
 ## Publicação no Docker Hub
 

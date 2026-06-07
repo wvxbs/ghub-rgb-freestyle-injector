@@ -8,7 +8,7 @@ A interface WinUI 3 existe para aproximar o projeto do paradigma visual do Windo
 
 - tema claro/escuro automático;
 - controles Fluent nativos;
-- NavigationView no estilo Configurações/PowerToys;
+- painel de instalação com ações de instalar, atualizar, reparar e desinstalar;
 - superfície com Mica quando o Windows permitir;
 - integração com file/folder pickers modernos;
 - log visível da CLI em tempo real.
@@ -26,6 +26,19 @@ No artifact gerado pelo GitHub Actions, o workflow:
 
 Isso preserva o comportamento validado da CLI e troca apenas a casca visual.
 
+## Wizard de instalação
+
+A interface WinUI 3 inclui um painel de instalação para uso por usuário, sem exigir administrador. Ele:
+
+- instala a pasta publicada em `%LOCALAPPDATA%\Programs\GHubFreestyleInjector`;
+- cria um lançador no Menu Iniciar do usuário;
+- registra uma entrada de desinstalação em `HKCU`;
+- permite atualizar usando uma versão nova executada fora da pasta instalada;
+- permite reparar atalhos/registro;
+- permite desinstalar, inclusive quando o app está rodando da pasta instalada.
+
+Esse wizard não substitui assinatura de código. Em máquinas com Smart App Control ou Windows App Control rígido, um executável WinUI não assinado ainda pode ser bloqueado antes de abrir. Para distribuição confortável, o próximo passo é assinar o artefato ou gerar um pacote/instalador assinado.
+
 ## Build
 
 O build local exige .NET SDK, Windows SDK e Windows App SDK compatíveis. Em máquinas sem SDK instalado, use o GitHub Actions:
@@ -39,4 +52,5 @@ Build WinUI 3 shell
 - A branch `feature/windows-gui` continua sendo a versão Tkinter.
 - A branch `feature/winui3-shell` é a tentativa nativa Windows 11.
 - O app WinUI 3 chama a CLI como processo e captura stdout/stderr.
+- A janela atual evita XAML complexo na primeira tela para reduzir falhas de runtime em builds self-contained.
 - Mica/Acrylic são usados como material do Windows App SDK quando disponíveis; em builds antigos do Windows, a janela cai para a superfície normal do WinUI.
