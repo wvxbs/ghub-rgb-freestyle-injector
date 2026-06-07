@@ -29,9 +29,9 @@ public partial class App : Application
         LogInfo("OnLaunched start");
         try
         {
-            LogInfo("MainWindow constructor start");
-            _window = new MainWindow();
-            LogInfo("MainWindow constructor done");
+            LogInfo("FreestyleWindow constructor start");
+            _window = new FreestyleWindow();
+            LogInfo("FreestyleWindow constructor done");
             _window.Activate();
             LogInfo("Window Activate done");
         }
