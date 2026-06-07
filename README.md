@@ -122,6 +122,42 @@ GHubFreestyleInjector-windows-x64
 
 Para a interface Tkinter, o formato portátil `.exe` continua fazendo sentido. Para a branch WinUI 3, o projeto agora segue outro caminho: o app inclui um wizard de instalação por usuário com ações de instalar, atualizar, reparar e desinstalar. Essa diferença existe porque o WinUI/Windows App SDK se comporta melhor como aplicativo instalado, especialmente quando o Windows aplica políticas de reputação e controle de aplicativos.
 
+#### Assinatura do artefato WinUI 3
+
+O workflow `Build WinUI 3 shell` assina os dois executáveis publicados no artifact:
+
+- `GHubFreestyleInjector.WinUI.exe`
+- `ghub-freestyle.exe`
+
+Para isso, o repositório precisa ter estes secrets:
+
+```text
+WINDOWS_CODESIGN_PFX_BASE64
+WINDOWS_CODESIGN_PFX_PASSWORD
+```
+
+O primeiro valor é o conteúdo Base64 limpo do arquivo `.pfx`; o segundo é a senha do `.pfx`. O workflow falha de propósito se esses secrets não existirem, porque um artifact WinUI sem assinatura tende a ser bloqueado por políticas recentes do Windows.
+
+O mesmo script usado no GitHub Actions pode ser usado localmente:
+
+```powershell
+$env:CODESIGN_PFX_PATH = "C:\caminho\para\certificado.pfx"
+$env:CODESIGN_PFX_PASSWORD = "senha-do-pfx"
+
+.\scripts\sign-windows-artifact.ps1 `
+  -ArtifactDir "C:\caminho\para\GHubFreestyleInjector-WinUI3-windows-x64"
+```
+
+Para testar sem carimbo de tempo, quando a máquina estiver sem rede:
+
+```powershell
+.\scripts\sign-windows-artifact.ps1 `
+  -ArtifactDir "C:\caminho\para\GHubFreestyleInjector-WinUI3-windows-x64" `
+  -SkipTimestamp
+```
+
+O script verifica a assinatura com `signtool verify` antes de terminar.
+
 Localmente, em um Windows com Python instalado, a GUI pode ser aberta com:
 
 ```powershell
