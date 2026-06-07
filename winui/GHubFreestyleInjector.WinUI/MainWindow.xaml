@@ -119,8 +119,8 @@
                                     IsReadOnly="True"
                                     TextWrapping="NoWrap"
                                     FontFamily="Cascadia Mono, Consolas"
-                                    VerticalScrollBarVisibility="Auto"
-                                    HorizontalScrollBarVisibility="Auto"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                     MinHeight="220" />
                             </Grid>
                         </Border>
@@ -134,8 +134,8 @@
                                 IsReadOnly="True"
                                 TextWrapping="NoWrap"
                                 FontFamily="Cascadia Mono, Consolas"
-                                VerticalScrollBarVisibility="Auto"
-                                HorizontalScrollBarVisibility="Auto" />
+                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.HorizontalScrollBarVisibility="Auto" />
                         </Border>
                     </Grid>
 
