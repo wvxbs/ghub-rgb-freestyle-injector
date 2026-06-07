@@ -15,12 +15,17 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
+        App.LogInfo("MainWindow InitializeComponent start");
         InitializeComponent();
+        App.LogInfo("MainWindow InitializeComponent done");
 
         _hwnd = WindowNative.GetWindowHandle(this);
+        App.LogInfo($"HWND acquired: {_hwnd}");
         ExtendsContentIntoTitleBar = true;
         TryApplyBackdrop();
+        App.LogInfo("Backdrop step done");
         InitializeDefaults();
+        App.LogInfo("Defaults initialized");
     }
 
     private void TryApplyBackdrop()

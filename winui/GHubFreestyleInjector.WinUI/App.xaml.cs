@@ -8,11 +8,14 @@ public partial class App : Application
 
     public App()
     {
+        LogInfo("App constructor start");
         UnhandledException += App_UnhandledException;
 
         try
         {
+            LogInfo("App InitializeComponent start");
             InitializeComponent();
+            LogInfo("App InitializeComponent done");
         }
         catch (Exception ex)
         {
@@ -23,10 +26,14 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        LogInfo("OnLaunched start");
         try
         {
+            LogInfo("MainWindow constructor start");
             _window = new MainWindow();
+            LogInfo("MainWindow constructor done");
             _window.Activate();
+            LogInfo("Window Activate done");
         }
         catch (Exception ex)
         {
@@ -40,7 +47,17 @@ public partial class App : Application
         LogCrash(e.Exception);
     }
 
+    internal static void LogInfo(string message)
+    {
+        WriteLog("winui-startup.log", message);
+    }
+
     private static void LogCrash(Exception ex)
+    {
+        WriteLog("winui-crash.log", ex.ToString());
+    }
+
+    private static void WriteLog(string fileName, string text)
     {
         try
         {
@@ -49,8 +66,8 @@ public partial class App : Application
                 "GHubFreestyleInjector");
             Directory.CreateDirectory(dir);
             File.AppendAllText(
-                Path.Combine(dir, "winui-crash.log"),
-                $"{DateTimeOffset.Now:O}\n{ex}\n\n");
+                Path.Combine(dir, fileName),
+                $"{DateTimeOffset.Now:O} {text}\n");
         }
         catch
         {
