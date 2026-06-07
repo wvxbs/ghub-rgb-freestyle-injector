@@ -27,7 +27,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            SystemBackdrop = new MicaBackdrop { Kind = MicaKind.BaseAlt };
+            SystemBackdrop = new MicaBackdrop();
         }
         catch
         {
@@ -96,7 +96,7 @@ public sealed partial class MainWindow : Window
 
     private async void KillGHub_Click(object sender, RoutedEventArgs e)
     {
-        await RunCliAsync("kill-ghub", includePaths: false);
+        await RunCliAsync(new[] { "kill-ghub" }, includePaths: false);
     }
 
     private async Task RunCliAsync(params string[] args)
