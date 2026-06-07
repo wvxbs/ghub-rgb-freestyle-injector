@@ -158,6 +158,7 @@ try {
     }
 
     Write-Host "Windows executables signed and verified as Authenticode binaries."
+    $global:LASTEXITCODE = 0
 }
 finally {
     if ($temporaryPfx -and (Test-Path -LiteralPath $temporaryPfx)) {
