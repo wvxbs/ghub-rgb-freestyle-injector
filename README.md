@@ -212,23 +212,38 @@ Manter duas imagens faz sentido se a interface web continuar existindo: a imagem
 
 Detalhes da casca WinUI 3, incluindo o wizard de instalação, ficam em [docs/winui3-shell.md](docs/winui3-shell.md).
 
-## Publicação no Docker Hub
+## Publicação no Docker Hub e GitHub Packages
 
-O workflow `.github/workflows/docker-publish.yml` publica a imagem no Docker Hub quando há push na branch `main`, seguindo o mesmo padrão usado em `telemetry-lab`.
+O workflow `.github/workflows/docker-publish.yml` publica a imagem no Docker Hub e no GitHub Container Registry. A publicação no GHCR faz o pacote aparecer na página **Packages** do repositório no GitHub.
 
-Imagem publicada:
+Imagens publicadas:
 
 ```text
 wvxbs/ghub-rgb-freestyle-injector
+ghcr.io/wvxbs/ghub-rgb-freestyle-injector
 ```
 
 Tags geradas:
 
-- `latest`
+- `latest`, somente na branch padrão
 - nome da branch
 - `sha-<commit>`
 
+Para baixar pelo GitHub Packages:
+
+```bash
+docker pull ghcr.io/wvxbs/ghub-rgb-freestyle-injector:latest
+```
+
+Para baixar uma imagem publicada a partir da branch WinUI 3:
+
+```bash
+docker pull ghcr.io/wvxbs/ghub-rgb-freestyle-injector:feature-winui3-shell
+```
+
 O workflow segue o mesmo padrão de `telemetry-lab`: `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` são lidos de `vars`, dentro do environment `DOCKERHUB_USERNAME`. Nada fica hardcoded no YAML.
+
+O GHCR usa o `GITHUB_TOKEN` automático do GitHub Actions, com permissão `packages: write`.
 
 ## Licença
 
