@@ -13,7 +13,9 @@ Esta branch mantém a CLI como núcleo do projeto e adiciona uma interface WinUI
 
 A interface segue o paradigma visual do Windows 11:
 
-- titlebar estendida com Mica habilitado por padrão;
+- titlebar estendida com Acrylic habilitado por padrão;
+- fallback para Mica quando Acrylic não estiver disponível;
+- uso da cor de destaque do Windows em ícones, seleção, cartões e ações principais;
 - troca claro/escuro baseada no tema de aplicativos do Windows;
 - navegação lateral inspirada em Configurações/PowerToys;
 - cartões com linhas de configuração em vez de formulário cru;
@@ -22,10 +24,16 @@ A interface segue o paradigma visual do Windows 11:
 - ações principais em botões com ícones Fluent;
 - status compacto no topo, sem caixa modal ou alerta pesado.
 
-O Mica pode ser desativado para diagnóstico com:
+A superfície de fundo usa `DesktopAcrylicBackdrop` por padrão para se aproximar do efeito acrílico do Windows 11, com influência visual do wallpaper, transparência e cor de destaque. O app também lê a cor de destaque do Windows no registro e aplica esse tom nos principais acentos da tela.
+
+O backdrop pode ser alterado para diagnóstico:
 
 ```powershell
+# Desliga Acrylic/Mica
 $env:GHUB_WINUI_BACKDROP = "0"
+
+# Força Mica em vez de Acrylic
+$env:GHUB_WINUI_BACKDROP = "mica"
 ```
 
 ## Build local
@@ -82,8 +90,7 @@ Antes de publicar um novo artefato:
 2. copiar a CLI para a pasta publicada;
 3. abrir o executável local;
 4. confirmar que a janela não abre preta;
-5. testar por pelo menos 60 segundos com Mica ligado;
+5. testar por pelo menos 60 segundos com Acrylic ligado;
 6. assinar o artefato;
 7. abrir o executável assinado;
 8. verificar logs em `%LOCALAPPDATA%\GHubFreestyleInjector`.
-

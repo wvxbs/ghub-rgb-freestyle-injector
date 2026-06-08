@@ -77,9 +77,10 @@ public sealed partial class MainWindow : Window
 
     private static Brush ResolvePageBackground()
     {
+        var accent = WindowsAccentColor;
         return new SolidColorBrush(IsLightTheme
-            ? Color.FromArgb(0xE8, 0xF8, 0xF4, 0xEF)
-            : Color.FromArgb(0xE8, 0x20, 0x20, 0x20));
+            ? Blend(accent, Colors.White, 0.90, 0xD8)
+            : Blend(accent, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.88, 0xD8));
     }
 
     private void InitializeWindowChrome()
@@ -145,7 +146,7 @@ public sealed partial class MainWindow : Window
             Width = 16,
             Height = 16,
             CornerRadius = new CornerRadius(4),
-            Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD4)),
+            Background = new SolidColorBrush(WindowsAccentColor),
             VerticalAlignment = VerticalAlignment.Center,
             Child = new FontIcon
             {
@@ -174,8 +175,8 @@ public sealed partial class MainWindow : Window
         {
             Padding = new Thickness(16, 14, 14, 18),
             Background = new SolidColorBrush(IsLightTheme
-                ? Color.FromArgb(0x72, 0xF4, 0xEE, 0xE6)
-                : Color.FromArgb(0x78, 0x20, 0x20, 0x20))
+                ? Blend(WindowsAccentColor, Colors.White, 0.86, 0x86)
+                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.78, 0x90))
         };
         Grid.SetRow(side, 1);
         side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -274,7 +275,7 @@ public sealed partial class MainWindow : Window
         {
             Glyph = "\uE73E",
             FontSize = 15,
-            Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x0E, 0x7A, 0x0D)),
+            Foreground = new SolidColorBrush(WindowsAccentColor),
             VerticalAlignment = VerticalAlignment.Center
         };
         var statusStack = new StackPanel
@@ -442,11 +443,11 @@ public sealed partial class MainWindow : Window
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(18),
             Background = new SolidColorBrush(IsLightTheme
-                ? Color.FromArgb(0xC4, 0xFF, 0xFF, 0xFF)
-                : Color.FromArgb(0xC0, 0x2C, 0x2C, 0x2C)),
+                ? Blend(WindowsAccentColor, Colors.White, 0.94, 0xC0)
+                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x2C, 0x2C, 0x2C), 0.92, 0xC2)),
             BorderBrush = new SolidColorBrush(IsLightTheme
-                ? Color.FromArgb(0x42, 0xC8, 0xBE, 0xB4)
-                : Color.FromArgb(0x44, 0x78, 0x78, 0x78)),
+                ? Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0xC8, 0xBE, 0xB4), 0.62, 0x4C)
+                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x78, 0x78, 0x78), 0.68, 0x50)),
             Child = content
         };
     }
@@ -614,8 +615,8 @@ public sealed partial class MainWindow : Window
             ColumnSpacing = 12,
             Background = selected
                 ? new SolidColorBrush(IsLightTheme
-                    ? Color.FromArgb(0x84, 0xEA, 0xE3, 0xDC)
-                    : Color.FromArgb(0x72, 0x3B, 0x3B, 0x3B))
+                    ? Blend(WindowsAccentColor, Colors.White, 0.78, 0x9C)
+                    : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x3B, 0x3B, 0x3B), 0.72, 0x86))
                 : new SolidColorBrush(Color.FromArgb(0x00, 0x00, 0x00, 0x00)),
             CornerRadius = new CornerRadius(6)
         };
@@ -628,7 +629,7 @@ public sealed partial class MainWindow : Window
             FontSize = 16,
             VerticalAlignment = VerticalAlignment.Center,
             Foreground = selected
-                ? new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD4))
+                ? new SolidColorBrush(WindowsAccentColor)
                 : null
         });
         var label = new TextBlock
@@ -659,6 +660,51 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private static Color WindowsAccentColor
+    {
+        get
+        {
+            var fallback = Color.FromArgb(0xFF, 0x00, 0x78, 0xD4);
+            try
+            {
+                using var dwm = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM");
+                if (dwm?.GetValue("ColorizationColor") is int colorization)
+                {
+                    return Color.FromArgb(
+                        0xFF,
+                        (byte)((colorization >> 16) & 0xFF),
+                        (byte)((colorization >> 8) & 0xFF),
+                        (byte)(colorization & 0xFF));
+                }
+
+                using var accent = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent");
+                if (accent?.GetValue("AccentColorMenu") is int accentMenu)
+                {
+                    return Color.FromArgb(
+                        0xFF,
+                        (byte)(accentMenu & 0xFF),
+                        (byte)((accentMenu >> 8) & 0xFF),
+                        (byte)((accentMenu >> 16) & 0xFF));
+                }
+            }
+            catch
+            {
+            }
+
+            return fallback;
+        }
+    }
+
+    private static Color Blend(Color foreground, Color background, double backgroundWeight, byte alpha)
+    {
+        var foregroundWeight = 1.0 - backgroundWeight;
+        return Color.FromArgb(
+            alpha,
+            (byte)Math.Clamp((foreground.R * foregroundWeight) + (background.R * backgroundWeight), 0, 255),
+            (byte)Math.Clamp((foreground.G * foregroundWeight) + (background.G * backgroundWeight), 0, 255),
+            (byte)Math.Clamp((foreground.B * foregroundWeight) + (background.B * backgroundWeight), 0, 255));
+    }
+
     private static UIElement BuildSmallFooter(string glyph, string text)
     {
         var row = new StackPanel
@@ -680,12 +726,34 @@ public sealed partial class MainWindow : Window
 
     private void TryApplyBackdrop()
     {
-        if (string.Equals(Environment.GetEnvironmentVariable("GHUB_WINUI_BACKDROP"), "0", StringComparison.Ordinal))
+        var requestedBackdrop = Environment.GetEnvironmentVariable("GHUB_WINUI_BACKDROP");
+        if (string.Equals(requestedBackdrop, "0", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(requestedBackdrop, "none", StringComparison.OrdinalIgnoreCase))
         {
-            App.LogInfo("Backdrop disabled by GHUB_WINUI_BACKDROP=0");
+            App.LogInfo("Backdrop disabled by GHUB_WINUI_BACKDROP");
             return;
         }
 
+        if (string.Equals(requestedBackdrop, "mica", StringComparison.OrdinalIgnoreCase))
+        {
+            TryEnableMica();
+            return;
+        }
+
+        try
+        {
+            SystemBackdrop = new DesktopAcrylicBackdrop();
+            App.LogInfo("Acrylic backdrop enabled");
+        }
+        catch (Exception ex)
+        {
+            App.LogInfo("Acrylic backdrop fallback: " + ex.Message);
+            TryEnableMica();
+        }
+    }
+
+    private void TryEnableMica()
+    {
         try
         {
             SystemBackdrop = new MicaBackdrop();
@@ -693,16 +761,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            App.LogInfo("Mica backdrop fallback: " + ex.Message);
-            try
-            {
-                SystemBackdrop = new DesktopAcrylicBackdrop();
-                App.LogInfo("Acrylic backdrop enabled");
-            }
-            catch (Exception acrylicEx)
-            {
-                App.LogInfo("Acrylic backdrop unavailable: " + acrylicEx.Message);
-            }
+            App.LogInfo("Mica backdrop unavailable: " + ex.Message);
         }
     }
 
