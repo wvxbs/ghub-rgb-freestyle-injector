@@ -1,0 +1,19 @@
+services:
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wvxbs/ghub-rgb-freestyle-injector:dev
+    volumes:
+      - ${PALETTES_DIR:-./palettes}:/input
+      - ${LGHUB_DIR:-./lghub-data}:/lghub
+      - ./.state:/state
+    command:
+      - sync
+      - --input
+      - /input
+      - --db
+      - /lghub/settings.db
+      - --state
+      - /state/state.json
+      - --dry-run

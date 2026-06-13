@@ -1,53 +1,85 @@
 # G HUB RGB Freestyle Injector
 
-Sincronizador de paletas RGB para criar presets **Freestyle** no Logitech G HUB sem configurar tecla por tecla manualmente.
+Aplicativo Windows para criar e manter presets **Freestyle** do Logitech G HUB sem depender do editor visual do G HUB tecla por tecla.
 
-O fluxo esperado é simples: você aponta para uma pasta com paletas, roda um comando e o projeto cria ou atualiza os presets no `settings.db` do G HUB. Ele foi pensado para teclado Logitech com RGB por tecla, especialmente o **Logitech G515 TKL em layout US internacional**.
+O projeto continua tendo uma CLI, mas o caminho principal é o app nativo **WinUI 3 / Windows App SDK**. Ele foi pensado para Windows 11, Logitech G HUB e teclados Logitech com RGB por tecla, especialmente o **Logitech G515 TKL em layout US internacional**.
 
 ## O que ele faz
 
-- Lê `palettes_codex_ready.json` quando existir. Essa é a fonte de verdade prioritária.
+- Lê `palettes_codex_ready.json` quando existir.
 - Se não houver JSON, tenta ler arquivos `.md` individuais com seções `Aplicação`, `Zonas` e `Teclas exatas`.
-- Aplica as cores na ordem correta: `base_color` no teclado inteiro, depois `zones`, depois `exact_key_overrides`.
-- Usa `exact_key_overrides` como prioridade máxima.
+- Aplica cores na ordem correta: `base_color`, depois `zones`, depois `exact_key_overrides`.
 - Cria presets Freestyle com prefixo `RGB - `.
-- Só regrava paletas novas ou alteradas desde a última execução, usando hash de conteúdo.
-- Cria backup automático do banco do G HUB antes de sincronizar.
-- Pode encerrar o G HUB antes de gravar, se você pedir.
-- Pode remover presets gerenciados que não existem mais na pasta de entrada com `--prune`.
+- Só regrava paletas novas ou alteradas desde a última execução.
+- Cria backup automático do `settings.db` antes de sincronizar.
+- Pode encerrar o G HUB antes de gravar.
+- Pode remover presets gerenciados que não existem mais na entrada com `--prune`.
 
-## Instalação no Arch/WSL
+## Baixar e usar
 
-```bash
-cd ghub-rgb-freestyle-injector
-python3 -m pip install --user -e .
+O workflow **Build Windows app** gera o artefato:
+
+```text
+GHubFreestyleInjector-WinUI3-windows-x64
 ```
 
-Se você não quiser instalar nem em modo editável, pode rodar pelo módulo:
+Depois de baixar o artefato no GitHub Actions ou em uma Release:
 
-```bash
-PYTHONPATH=src python3 -m ghub_freestyle_injector.cli --help
+1. extraia a pasta;
+2. execute `GHubFreestyleInjector.WinUI.exe`;
+3. escolha a pasta das paletas;
+4. confirme o `settings.db` do G HUB;
+5. use `Simular` antes de `Aplicar`.
+
+O app publicado inclui a CLI `ghub-freestyle.exe` na mesma pasta.
+
+## Modo portátil ou instalado
+
+O app não precisa ser instalado.
+
+No **modo portátil**, basta manter estes arquivos na mesma pasta:
+
+```text
+GHubFreestyleInjector.WinUI.exe
+ghub-freestyle.exe
 ```
 
-## Uso rápido
+Esse modo não cria atalhos, não registra app no Windows e pode ser apagado removendo a pasta.
 
-Com uma pasta de paletas em qualquer lugar do sistema:
+No **modo instalado**, use o botão `Instalar` dentro do app. A instalação é por usuário e cria:
+
+- atalho `.lnk` no Menu Iniciar;
+- atalho `.lnk` na Área de Trabalho;
+- entrada em **Configurações > Aplicativos > Aplicativos instalados**;
+- chave `App Paths` em `HKCU`, para o Windows localizar o app pelo nome.
+
+As ações `Atualizar`, `Reparar` e `Desinstalar` ficam no próprio app.
+
+## Interface WinUI 3
+
+A interface usa:
+
+- WinUI 3 / Windows App SDK;
+- Acrylic por padrão, com fallback para Mica;
+- cor de destaque do Windows via `UISettings.GetColorValue(UIColorType.Accent)`;
+- tema claro/escuro seguindo o Windows;
+- titlebar estendida;
+- layout inspirado em Configurações/PowerToys;
+- assistente de instalação por usuário.
+
+Detalhes técnicos ficam em [winui/README.md](winui/README.md).
+
+## CLI
+
+A CLI é mantida para automação, diagnóstico e uso avançado.
+
+Instalação local para desenvolvimento:
 
 ```bash
-ghub-freestyle sync \
-  --input /mnt/c/Users/<usuario>/RGB-palettes \
-  --kill-ghub
+python -m pip install -e .
 ```
 
-Para ver o que aconteceria sem alterar nada:
-
-```bash
-ghub-freestyle sync \
-  --input /mnt/c/Users/<usuario>/RGB-palettes \
-  --dry-run
-```
-
-Para listar paletas detectadas e presets já existentes no G HUB:
+Listar paletas detectadas e presets existentes:
 
 ```bash
 ghub-freestyle list \
@@ -55,16 +87,23 @@ ghub-freestyle list \
   --managed-only
 ```
 
-Para forçar a regravação de tudo:
+Simular sincronização:
 
 ```bash
 ghub-freestyle sync \
   --input /mnt/c/Users/<usuario>/RGB-palettes \
-  --force \
+  --dry-run
+```
+
+Aplicar:
+
+```bash
+ghub-freestyle sync \
+  --input /mnt/c/Users/<usuario>/RGB-palettes \
   --kill-ghub
 ```
 
-Para remover presets `RGB - ...` que foram criados por este projeto, mas não existem mais na entrada:
+Remover presets gerenciados que não existem mais na entrada:
 
 ```bash
 ghub-freestyle sync \
@@ -75,17 +114,17 @@ ghub-freestyle sync \
 
 ## Docker
 
-O projeto tem `Dockerfile`. A ideia é montar:
+Docker não é o foco do projeto, porque o G HUB é um aplicativo Windows e a experiência principal deve acontecer no Windows. Ainda assim, a imagem CLI continua disponível para simulações e automações.
 
-- a pasta de entrada em `/input`;
-- a pasta do G HUB em `/lghub`;
-- opcionalmente uma pasta de estado em `/state`.
-
-Exemplo no WSL com Docker Desktop integrado:
+Build local:
 
 ```bash
 docker build -t ghub-rgb-freestyle-injector .
+```
 
+Uso:
+
+```bash
 docker run --rm \
   -v /mnt/c/Users/<usuario>/RGB-palettes:/input \
   -v /mnt/c/Users/<usuario>/AppData/Local/LGHUB:/lghub \
@@ -93,28 +132,13 @@ docker run --rm \
   ghub-rgb-freestyle-injector sync \
   --input /input \
   --db /lghub/settings.db \
-  --state /state/state.json
+  --state /state/state.json \
+  --dry-run
 ```
 
-Observação: no WSL, o comando `--kill-ghub` depende de acesso ao `taskkill.exe` do Windows. Dentro do Docker isso normalmente não existe, então o jeito mais previsível é fechar o G HUB antes ou rodar `ghub-freestyle kill-ghub` fora do contêiner.
+Observação: dentro do Docker, `--kill-ghub` normalmente não consegue encerrar o G HUB do Windows. Feche o G HUB manualmente ou use a versão WinUI/CLI no Windows para aplicar mudanças reais.
 
-## Publicação no Docker Hub
-
-O workflow `.github/workflows/docker-publish.yml` publica a imagem no Docker Hub quando há push na branch `main`, seguindo o mesmo padrão usado em `telemetry-lab`.
-
-Imagem publicada:
-
-```text
-wvxbs/ghub-rgb-freestyle-injector
-```
-
-Tags geradas:
-
-- `latest`
-- nome da branch
-- `sha-<commit>`
-
-O workflow segue o mesmo padrão de `telemetry-lab`: `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` são lidos de `vars`, dentro do environment `DOCKERHUB_USERNAME`. Nada fica hardcoded no YAML.
+O workflow Docker fica manual por enquanto (`workflow_dispatch`).
 
 ## Formato prioritário
 
@@ -179,47 +203,27 @@ Por padrão, o arquivo de estado fica dentro da pasta de entrada:
 
 Ele guarda o hash das paletas aplicadas. Se o conteúdo não mudou e o preset ainda existe no G HUB, a paleta é ignorada. Se o conteúdo mudou, o preset é substituído. Se o preset não existe, ele é criado mesmo que o hash esteja igual.
 
-Você pode escolher outro caminho:
+## Desenvolvimento
+
+Build da CLI:
 
 ```bash
-ghub-freestyle sync \
-  --input /input \
-  --state /state/state.json
+python -m pip install -e .
+python -m pytest
 ```
 
-## Backup
+Build do app Windows:
 
-Antes de gravar, o projeto copia `settings.db`, `settings.db-wal` e `settings.db-shm`, quando existirem, para uma pasta de backup.
-
-Por padrão, o backup fica ao lado do banco:
-
-```text
-AppData/Local/LGHUB/ghub-freestyle-backups/
+```powershell
+dotnet restore .\winui\GHubFreestyleInjector.WinUI\GHubFreestyleInjector.WinUI.csproj -r win-x64
+dotnet publish .\winui\GHubFreestyleInjector.WinUI\GHubFreestyleInjector.WinUI.csproj `
+  -c Release `
+  -r win-x64 `
+  -p:SelfContained=true `
+  -p:WindowsPackageType=None `
+  -o .\artifacts\winui
 ```
-
-Você pode mudar:
-
-```bash
-ghub-freestyle sync \
-  --input /input \
-  --backup-dir /algum/lugar/seguro
-```
-
-## Recuperação manual
-
-Se algo ficar estranho:
-
-1. Feche o G HUB.
-2. Copie os arquivos do backup de volta para `AppData/Local/LGHUB`.
-3. Abra o G HUB novamente.
-
-## Notas importantes
-
-- O projeto mexe diretamente no banco local do G HUB. Por isso o backup automático é obrigatório no fluxo normal.
-- O G HUB fechado reduz bastante a chance de conflito com `settings.db-wal`.
-- O projeto não associa presets a jogos. Ele cria presets Freestyle globais para você escolher no app.
-- O atalho/prompt para gerar novas paletas descrito no pacote de entrada é documentação útil, mas não faz parte do escopo deste injetor.
 
 ## Licença
 
-Este projeto usa a licença MIT. Ela é uma licença permissiva: permite usar, modificar, distribuir e reaproveitar o código com poucas restrições, desde que o aviso de copyright e a licença sejam preservados. Para este tipo de ferramenta pessoal/open source pequena, é uma escolha comum e de baixo atrito. Ela não oferece garantia nem suporte obrigatório.
+MIT.

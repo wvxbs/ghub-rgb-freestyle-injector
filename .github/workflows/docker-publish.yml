@@ -1,16 +1,15 @@
 name: Publish Docker image
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   docker:
-    name: Publish to Docker Hub
+    name: Publish container image
     runs-on: ubuntu-latest
     environment: DOCKERHUB_USERNAME
 
@@ -27,13 +26,22 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ vars.DOCKERHUB_TOKEN }}
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: wvxbs/ghub-rgb-freestyle-injector
+          images: |
+            wvxbs/ghub-rgb-freestyle-injector
+            ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=branch
             type=sha,prefix=sha-
 
