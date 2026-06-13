@@ -6,7 +6,8 @@ param(
     [string]$PfxBase64 = $env:CODESIGN_PFX_BASE64,
     [string]$PfxPassword = $env:CODESIGN_PFX_PASSWORD,
     [string]$TimestampUrl = $(if ($env:CODESIGN_TIMESTAMP_URL) { $env:CODESIGN_TIMESTAMP_URL } else { "http://timestamp.digicert.com" }),
-    [switch]$SkipTimestamp
+    [switch]$SkipTimestamp,
+    [string[]]$ExtraTargets = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -123,6 +124,10 @@ try {
         (Join-Path $artifactPath.Path "GHubFreestyleInjector.WinUI.exe"),
         (Join-Path $artifactPath.Path "ghub-freestyle.exe")
     )
+
+    foreach ($extraTarget in $ExtraTargets) {
+        $targets += $extraTarget
+    }
 
     foreach ($target in $targets) {
         $null = Get-RequiredFile -Path $target

@@ -62,13 +62,41 @@ jobs:
           ./scripts/sign-windows-artifact.ps1
           -ArtifactDir artifacts/GHubFreestyleInjector-WinUI3
 
-      - name: Upload WinUI artifact
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        env:
+          GHUB_FREESTYLE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.1.0' }}
+          GHUB_FREESTYLE_SOURCE_DIR: ${{ github.workspace }}\artifacts\GHubFreestyleInjector-WinUI3
+          GHUB_FREESTYLE_INSTALLER_OUT: ${{ github.workspace }}\artifacts\installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/GHubFreestyleInjector.iss'
+
+      - name: Sign Windows installer
+        shell: pwsh
+        env:
+          CODESIGN_PFX_BASE64: ${{ secrets.WINDOWS_CODESIGN_PFX_BASE64 }}
+          CODESIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_CODESIGN_PFX_PASSWORD }}
+        run: >
+          ./scripts/sign-windows-artifact.ps1
+          -ArtifactDir artifacts/GHubFreestyleInjector-WinUI3
+          -ExtraTargets artifacts/installer/GHubFreestyleInjector-Setup-windows-x64.exe
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GHubFreestyleInjector-Setup-windows-x64
+          path: artifacts/installer/GHubFreestyleInjector-Setup-windows-x64.exe
+
+      - name: Upload portable artifact
         uses: actions/upload-artifact@v4
         with:
           name: GHubFreestyleInjector-WinUI3-windows-x64
           path: artifacts/GHubFreestyleInjector-WinUI3/**
 
-      - name: Create release archive
+      - name: Create portable release archive
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
@@ -81,4 +109,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/GHubFreestyleInjector-WinUI3-windows-x64.zip
+          files: |
+            artifacts/installer/GHubFreestyleInjector-Setup-windows-x64.exe
+            artifacts/GHubFreestyleInjector-WinUI3-windows-x64.zip

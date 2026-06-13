@@ -20,29 +20,38 @@ def make_db(path: Path) -> None:
 
 
 class PaletteSyncTest(unittest.TestCase):
-    def test_json_palette_sync_is_idempotent(self) -> None:
+    def test_markdown_palette_sync_is_idempotent(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             input_dir = tmp_path / "input"
             input_dir.mkdir()
-            (input_dir / "palettes_codex_ready.json").write_text(
-                json.dumps(
-                    {
-                        "palettes": [
-                            {
-                                "id": "valorant",
-                                "title": "Valorant",
-                                "base_mode": "keyboard_wasd",
-                                "base_color": "#6B3CFF",
-                                "esc_color": "#FF8A1F",
-                                "zones": {"modifiers": "#3B2A7A"},
-                                "exact_key_overrides": {"W": "#48D7FF", "ESC": "#FF8A1F"},
-                            }
-                        ]
-                    }
-                ),
+            (input_dir / "valorant.md").write_text(
+                """# Valorant
+
+**Modo:** `keyboard_wasd`
+
+## Aplicação
+
+```text
+SET_ALL_KEYS #6B3CFF
+SET_KEY ESC #FF8A1F
+```
+
+## Zonas
+
+| Zona | Cor |
+| --- | --- |
+| modifiers | #3B2A7A |
+
+## Teclas exatas
+
+| Tecla | Cor |
+| --- | --- |
+| W | #48D7FF |
+| ESC | #FF8A1F |
+""",
                 encoding="utf-8",
             )
             db = tmp_path / "settings.db"

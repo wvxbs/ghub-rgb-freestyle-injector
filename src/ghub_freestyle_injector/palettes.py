@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import hashlib
-import json
 import re
 
 
@@ -61,45 +60,6 @@ def slugify(text: str) -> str:
         text = text.replace(old, new)
     text = re.sub(r"[^a-z0-9]+", "_", text)
     return text.strip("_")
-
-
-def palette_from_json_item(item: dict, source_path: Path, package_hash: str) -> Palette:
-    palette_id = str(item["id"])
-    exact = {
-        str(key).upper(): normalize_hex(value) or str(value).upper()
-        for key, value in dict(item.get("exact_key_overrides") or {}).items()
-    }
-    esc = normalize_hex(item.get("esc_color"))
-    if esc and "ESC" not in exact:
-        exact["ESC"] = esc
-
-    zones = {
-        str(zone): normalize_hex(color) or str(color).upper()
-        for zone, color in dict(item.get("zones") or {}).items()
-    }
-
-    item_hash = sha256_bytes(
-        json.dumps(item, ensure_ascii=False, sort_keys=True).encode("utf-8")
-    )
-    return Palette(
-        id=palette_id,
-        title=str(item.get("title") or palette_id),
-        base_color=normalize_hex(item.get("base_color")) or "#00FFFF",
-        esc_color=esc,
-        base_mode=item.get("base_mode"),
-        zones=zones,
-        exact_key_overrides=exact,
-        source=str(source_path),
-        source_hash=f"{package_hash}:{item_hash}",
-    )
-
-
-def load_json_palettes(path: Path) -> list[Palette]:
-    raw = path.read_bytes()
-    payload = json.loads(raw.decode("utf-8-sig"))
-    items = payload.get("palettes", payload if isinstance(payload, list) else [])
-    package_hash = sha256_bytes(raw)
-    return [palette_from_json_item(item, path, package_hash) for item in items]
 
 
 def parse_markdown_table(lines: list[str], heading_index: int) -> list[tuple[str, str]]:
@@ -168,10 +128,6 @@ def load_markdown_palette(path: Path) -> Palette | None:
 
 def discover_palettes(input_dir: Path) -> list[Palette]:
     input_dir = input_dir.resolve()
-    json_path = input_dir / "palettes_codex_ready.json"
-    if json_path.exists():
-        return load_json_palettes(json_path)
-
     candidates = sorted(input_dir.rglob("*.md"))
     palettes: list[Palette] = []
     for path in candidates:

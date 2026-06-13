@@ -6,9 +6,8 @@ O projeto continua tendo uma CLI, mas o caminho principal é o app nativo **WinU
 
 ## O que ele faz
 
-- Lê `palettes_codex_ready.json` quando existir.
-- Se não houver JSON, tenta ler arquivos `.md` individuais com seções `Aplicação`, `Zonas` e `Teclas exatas`.
-- Aplica cores na ordem correta: `base_color`, depois `zones`, depois `exact_key_overrides`.
+- Lê arquivos `.md` individuais com seções `Aplicação`, `Zonas` e `Teclas exatas`.
+- Aplica cores na ordem correta: teclado inteiro, depois zonas, depois teclas exatas.
 - Cria presets Freestyle com prefixo `RGB - `.
 - Só regrava paletas novas ou alteradas desde a última execução.
 - Cria backup automático do `settings.db` antes de sincronizar.
@@ -17,36 +16,33 @@ O projeto continua tendo uma CLI, mas o caminho principal é o app nativo **WinU
 
 ## Baixar e usar
 
-O workflow **Build Windows app** gera o artefato:
+A forma recomendada para usuários finais é baixar o instalador na página de Releases:
 
 ```text
-GHubFreestyleInjector-WinUI3-windows-x64
+GHubFreestyleInjector-Setup-windows-x64.exe
 ```
 
-Depois de baixar o artefato no GitHub Actions ou em uma Release:
+O instalador coloca o app e a CLI no perfil do usuário, cria atalhos e registra a desinstalação em **Configurações > Aplicativos > Aplicativos instalados**.
 
-1. extraia a pasta;
-2. execute `GHubFreestyleInjector.WinUI.exe`;
-3. escolha a pasta das paletas;
-4. confirme o `settings.db` do G HUB;
-5. use `Simular` antes de `Aplicar`.
+Depois de instalar:
 
-O app publicado inclui a CLI `ghub-freestyle.exe` na mesma pasta.
+1. abra **G HUB RGB Freestyle Injector** pelo Menu Iniciar;
+2. escolha a pasta das paletas;
+3. confirme o `settings.db` do G HUB;
+4. use `Simular` antes de `Aplicar`.
 
-## Modo portátil ou instalado
+O app instalado inclui a CLI `ghub-freestyle.exe` na mesma pasta.
 
-O app não precisa ser instalado.
+## Portátil ou instalado
 
-No **modo portátil**, basta manter estes arquivos na mesma pasta:
+WinUI 3 não é uma boa plataforma para um executável único realmente portátil: o app precisa carregar dependências nativas do Windows App SDK. Por isso, o projeto publica dois formatos:
 
-```text
-GHubFreestyleInjector.WinUI.exe
-ghub-freestyle.exe
-```
+- `GHubFreestyleInjector-Setup-windows-x64.exe`: recomendado, é um instalador único e amigável.
+- `GHubFreestyleInjector-WinUI3-windows-x64.zip`: portátil/técnico, útil para testes, automação e diagnóstico.
 
-Esse modo não cria atalhos, não registra app no Windows e pode ser apagado removendo a pasta.
+No **modo portátil**, extraia o ZIP e execute `GHubFreestyleInjector.WinUI.exe`. Esse modo não cria atalhos, não registra app no Windows e pode ser apagado removendo a pasta extraída.
 
-No **modo instalado**, use o botão `Instalar` dentro do app. A instalação é por usuário e cria:
+No **modo instalado**, use o instalador da Release. A instalação é por usuário e cria:
 
 - atalho `.lnk` no Menu Iniciar;
 - atalho `.lnk` na Área de Trabalho;
@@ -140,40 +136,56 @@ Observação: dentro do Docker, `--kill-ghub` normalmente não consegue encerrar
 
 O workflow Docker fica manual por enquanto (`workflow_dispatch`).
 
-## Formato prioritário
+## Formato das paletas
 
-O formato recomendado é `palettes_codex_ready.json`:
+O formato suportado é um arquivo Markdown (`.md`) por paleta. O nome do preset vem do primeiro título `#` do arquivo.
 
-```json
-{
-  "palettes": [
-    {
-      "id": "valorant_omen_jett_astra",
-      "title": "Valorant — Omen/Jett/Astra",
-      "base_mode": "keyboard_wasd",
-      "base_color": "#6B3CFF",
-      "esc_color": "#FF8A1F",
-      "zones": {
-        "modifiers": "#3B2A7A",
-        "number_row": "#3D7CFF"
-      },
-      "exact_key_overrides": {
-        "ESC": "#FF8A1F",
-        "W": "#48D7FF",
-        "A": "#48D7FF",
-        "S": "#48D7FF",
-        "D": "#48D7FF"
-      }
-    }
-  ]
-}
+Exemplo:
+
+````markdown
+# Valorant Omen Jett Astra
+
+**Modo:** `keyboard_wasd`
+
+## Aplicação
+
+```text
+SET_ALL_KEYS #6B3CFF
+SET_KEY ESC #FF8A1F
 ```
+
+## Zonas
+
+| Zona | Cor |
+| --- | --- |
+| modifiers | #3B2A7A |
+| number_row | #3D7CFF |
+
+## Teclas exatas
+
+| Tecla | Cor |
+| --- | --- |
+| ESC | #FF8A1F |
+| W | #48D7FF |
+| A | #48D7FF |
+| S | #48D7FF |
+| D | #48D7FF |
+````
+
+Campos reconhecidos:
+
+- `# Título`: obrigatório; vira o nome do preset com prefixo `RGB - `.
+- `SET_ALL_KEYS #RRGGBB`: obrigatório; define a cor base do teclado inteiro.
+- `SET_KEY ESC #RRGGBB`: opcional; atalho para definir a tecla `ESC`.
+- `## Zonas`: opcional; tabela com zona e cor.
+- `## Teclas exatas`: opcional; tabela com tecla e cor.
+- `**Modo:**`: opcional; guardado como metadado, sem mudar a aplicação das cores.
 
 Ordem de aplicação:
 
-1. `base_color` no teclado inteiro.
-2. `zones`, se existirem.
-3. `exact_key_overrides`, sempre por último.
+1. cor base no teclado inteiro.
+2. zonas, se existirem.
+3. teclas exatas, sempre por último.
 
 ## Zonas aceitas
 
@@ -222,6 +234,14 @@ dotnet publish .\winui\GHubFreestyleInjector.WinUI\GHubFreestyleInjector.WinUI.c
   -p:SelfContained=true `
   -p:WindowsPackageType=None `
   -o .\artifacts\winui
+```
+
+Build do instalador local, com Inno Setup 6 instalado:
+
+```powershell
+$env:GHUB_FREESTYLE_SOURCE_DIR = "$PWD\artifacts\winui"
+$env:GHUB_FREESTYLE_INSTALLER_OUT = "$PWD\artifacts\installer"
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" .\installer\GHubFreestyleInjector.iss
 ```
 
 ## Licença

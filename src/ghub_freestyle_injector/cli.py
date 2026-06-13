@@ -29,7 +29,7 @@ def add_common_paths(parser: argparse.ArgumentParser) -> None:
         "-i",
         type=positive_path,
         default=Path.cwd(),
-        help="Diretório com palettes_codex_ready.json ou arquivos .md.",
+        help="Diretório com arquivos .md de paletas.",
     )
     parser.add_argument(
         "--db",
