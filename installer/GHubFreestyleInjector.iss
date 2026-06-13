@@ -38,7 +38,7 @@ VersionInfoVersion={#BinaryVersion}
 VersionInfoCompany=wvxbs
 VersionInfoDescription={#AppName} Setup
 VersionInfoProductName={#AppName}
-VersionInfoProductVersion={#AppVersion}
+VersionInfoProductVersion={#BinaryVersion}
 CloseApplications=yes
 RestartApplications=no
 
