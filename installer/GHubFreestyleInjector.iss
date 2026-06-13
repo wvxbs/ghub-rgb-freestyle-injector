@@ -1,9 +1,9 @@
 #define AppName "G HUB RGB Freestyle Injector"
 #define AppId "GHubFreestyleInjector"
 #define AppVersion GetEnv("GHUB_FREESTYLE_VERSION")
-#define BinaryVersion "0.1.0.0"
+#define BinaryVersion "0.1.1.0"
 #if AppVersion == ""
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.1.1"
 #endif
 #define SourceDir GetEnv("GHUB_FREESTYLE_SOURCE_DIR")
 #if SourceDir == ""

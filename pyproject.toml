@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ghub-rgb-freestyle-injector"
-version = "0.1.0"
+version = "0.1.1"
 description = "Sincroniza paletas RGB Markdown/JSON como presets Freestyle do Logitech G HUB."
 readme = "README.md"
 requires-python = ">=3.11"

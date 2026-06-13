@@ -69,7 +69,7 @@ jobs:
       - name: Build installer
         shell: pwsh
         env:
-          GHUB_FREESTYLE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.1.0' }}
+          GHUB_FREESTYLE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.1.1' }}
           GHUB_FREESTYLE_SOURCE_DIR: ${{ github.workspace }}\artifacts\GHubFreestyleInjector-WinUI3
           GHUB_FREESTYLE_INSTALLER_OUT: ${{ github.workspace }}\artifacts\installer
         run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer/GHubFreestyleInjector.iss'
