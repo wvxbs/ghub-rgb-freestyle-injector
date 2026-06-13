@@ -24,7 +24,7 @@ A interface segue o paradigma visual do Windows 11:
 - ações principais em botões com ícones Fluent;
 - status compacto no topo, sem caixa modal ou alerta pesado.
 
-A superfície de fundo usa `DesktopAcrylicBackdrop` por padrão para se aproximar do efeito acrílico do Windows 11, com influência visual do wallpaper, transparência e cor de destaque. O app também lê a cor de destaque do Windows no registro e aplica esse tom nos principais acentos da tela.
+A superfície de fundo usa `DesktopAcrylicBackdrop` por padrão para se aproximar do efeito acrílico do Windows 11, com influência visual do wallpaper, transparência e cor de destaque. O app lê a cor de destaque do Windows via `UISettings.GetColorValue(UIColorType.Accent)` e usa o registro apenas como fallback; esse tom é aplicado nos principais acentos da tela.
 
 O backdrop pode ser alterado para diagnóstico:
 
@@ -51,6 +51,16 @@ dotnet publish .\winui\GHubFreestyleInjector.WinUI\GHubFreestyleInjector.WinUI.c
 
 Para a interface executar a CLI embutida, copie `ghub-freestyle.exe` para a mesma pasta do executável WinUI publicado.
 
+## Modo portátil
+
+O app WinUI não precisa ser instalado para funcionar. O artefato publicado pode ser usado como uma ferramenta portátil:
+
+1. extraia ou mantenha a pasta publicada em qualquer lugar;
+2. garanta que `GHubFreestyleInjector.WinUI.exe` e `ghub-freestyle.exe` estejam na mesma pasta;
+3. execute `GHubFreestyleInjector.WinUI.exe`.
+
+Nesse modo, o app não cria atalhos, não registra entrada em **Apps instalados** e não escreve em `App Paths`. Ele continua conseguindo listar, simular e aplicar presets, desde que tenha acesso ao `settings.db` do G HUB e à pasta de paletas.
+
 ## Assinatura local
 
 O script de assinatura espera variáveis de ambiente, sem senha hardcoded no repositório:
@@ -71,10 +81,21 @@ A própria janela tem ações de instalação:
 
 - `Instalar`: copia o artefato atual para a pasta de programas do usuário.
 - `Atualizar`: substitui a instalação existente a partir de um artefato baixado.
-- `Reparar`: recria atalhos e entrada de desinstalação.
+- `Reparar`: recria atalhos, entrada de desinstalação e integração com o shell.
 - `Desinstalar`: remove a instalação local e os atalhos criados.
 
 Essas ações não exigem instalação global da CLI e não escrevem em diretórios de máquina.
+
+Ao instalar ou reparar, a GUI cria uma presença de app Windows por usuário:
+
+- atalho `.lnk` real no Menu Iniciar;
+- atalho `.lnk` na Área de Trabalho;
+- entrada em **Configurações > Aplicativos > Aplicativos instalados**;
+- chave `App Paths` em `HKCU`, permitindo que o Windows localize o executável instalado pelo nome.
+
+Essa abordagem evita MSI/MSIX por enquanto, mas deixa o app acessível pelo Menu Iniciar, pela pesquisa do Windows, pelos atalhos do Explorer e pela tela de desinstalação do Windows.
+
+Use a instalação quando quiser que o Windows trate a ferramenta como aplicativo. Use o modo portátil quando quiser só baixar, rodar e apagar a pasta depois.
 
 ## Nota sobre NavigationView
 

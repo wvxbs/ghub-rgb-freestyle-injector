@@ -1,15 +1,18 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.Win32;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 using Windows.Storage.Pickers;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 using WinRT.Interop;
 
 namespace GHubFreestyleInjector.WinUI;
@@ -79,8 +82,8 @@ public sealed partial class MainWindow : Window
     {
         var accent = WindowsAccentColor;
         return new SolidColorBrush(IsLightTheme
-            ? Blend(accent, Colors.White, 0.90, 0xD8)
-            : Blend(accent, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.88, 0xD8));
+            ? Blend(accent, Colors.White, 0.90, 0xC0)
+            : Blend(accent, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.86, 0xBC));
     }
 
     private void InitializeWindowChrome()
@@ -175,8 +178,8 @@ public sealed partial class MainWindow : Window
         {
             Padding = new Thickness(16, 14, 14, 18),
             Background = new SolidColorBrush(IsLightTheme
-                ? Blend(WindowsAccentColor, Colors.White, 0.86, 0x86)
-                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.78, 0x90))
+                ? Blend(WindowsAccentColor, Colors.White, 0.86, 0x72)
+                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x20, 0x20, 0x20), 0.76, 0x78))
         };
         Grid.SetRow(side, 1);
         side.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -443,8 +446,8 @@ public sealed partial class MainWindow : Window
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(18),
             Background = new SolidColorBrush(IsLightTheme
-                ? Blend(WindowsAccentColor, Colors.White, 0.94, 0xC0)
-                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x2C, 0x2C, 0x2C), 0.92, 0xC2)),
+                ? Blend(WindowsAccentColor, Colors.White, 0.94, 0xB4)
+                : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x2C, 0x2C, 0x2C), 0.90, 0xAC)),
             BorderBrush = new SolidColorBrush(IsLightTheme
                 ? Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0xC8, 0xBE, 0xB4), 0.62, 0x4C)
                 : Blend(WindowsAccentColor, Color.FromArgb(0xFF, 0x78, 0x78, 0x78), 0.68, 0x50)),
@@ -597,6 +600,7 @@ public sealed partial class MainWindow : Window
             Padding = new Thickness(14, 7, 14, 7),
             CornerRadius = new CornerRadius(6)
         };
+        AutomationProperties.SetName(button, text);
         if (primary)
         {
             button.Style = (Style)Application.Current.Resources["AccentButtonStyle"];
@@ -665,6 +669,14 @@ public sealed partial class MainWindow : Window
         get
         {
             var fallback = Color.FromArgb(0xFF, 0x00, 0x78, 0xD4);
+            try
+            {
+                return new UISettings().GetColorValue(UIColorType.Accent);
+            }
+            catch
+            {
+            }
+
             try
             {
                 using var dwm = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM");
@@ -928,8 +940,8 @@ public sealed partial class MainWindow : Window
         var installed = File.Exists(InstalledExe);
         var origin = IsRunningFromInstallDir ? "instalada" : "artefato baixado";
         InstallStateText.Text = installed
-            ? $"Instalado em {InstallDir}. Esta execução veio de {origin}."
-            : $"Ainda não instalado. A instalação por usuário será criada em {InstallDir}.";
+            ? $"Instalado em {InstallDir}. Esta execução veio de {origin}; artefatos baixados continuam funcionando em modo portátil."
+            : $"Modo portátil ativo. Você pode usar este artefato sem instalar; a instalação por usuário só cria atalhos e registro em {InstallDir}.";
     }
 
     private static void CopyDirectory(string sourceDir, string targetDir)
@@ -950,13 +962,27 @@ public sealed partial class MainWindow : Window
     private void CreateLaunchers()
     {
         Directory.CreateDirectory(StartMenuProgramsDir);
-        File.WriteAllText(StartMenuLauncher, $"@echo off\r\nstart \"\" \"{InstalledExe}\" %*\r\n", Encoding.UTF8);
+        CreateShortcut(
+            StartMenuLauncher,
+            InstalledExe,
+            InstallDir,
+            InstalledExe,
+            "Sincronizador de presets RGB Freestyle para Logitech G HUB");
+        CreateShortcut(
+            DesktopLauncher,
+            InstalledExe,
+            InstallDir,
+            InstalledExe,
+            "G HUB RGB Freestyle Injector");
         File.WriteAllText(UninstallScript, BuildUninstallScript(), Encoding.UTF8);
+        TryDelete(LegacyStartMenuLauncher);
     }
 
     private static void RemoveLaunchers()
     {
         TryDelete(StartMenuLauncher);
+        TryDelete(DesktopLauncher);
+        TryDelete(LegacyStartMenuLauncher);
     }
 
     private void RegisterUninstallEntry()
@@ -970,11 +996,19 @@ public sealed partial class MainWindow : Window
         key?.SetValue("UninstallString", $"\"{UninstallScript}\"");
         key?.SetValue("QuietUninstallString", $"\"{UninstallScript}\"");
         key?.SetValue("NoModify", 1, RegistryValueKind.DWord);
+        key?.SetValue("NoRepair", 0, RegistryValueKind.DWord);
+        key?.SetValue("EstimatedSize", EstimateInstallSizeKb(), RegistryValueKind.DWord);
+        key?.SetValue("URLInfoAbout", "https://github.com/wvxbs/ghub-rgb-freestyle-injector");
+
+        using var appPath = Registry.CurrentUser.CreateSubKey(AppPathsRegistryKey);
+        appPath?.SetValue(string.Empty, InstalledExe);
+        appPath?.SetValue("Path", InstallDir);
     }
 
     private static void RemoveUninstallEntry()
     {
         Registry.CurrentUser.DeleteSubKeyTree(UninstallRegistryKey, throwOnMissingSubKey: false);
+        Registry.CurrentUser.DeleteSubKeyTree(AppPathsRegistryKey, throwOnMissingSubKey: false);
     }
 
     private void ScheduleSelfRemoval()
@@ -999,9 +1033,68 @@ taskkill /IM GHubFreestyleInjector.WinUI.exe /F >nul 2>nul
 timeout /t 2 /nobreak >nul 2>nul
 rmdir /s /q "{InstallDir}" >nul 2>nul
 del "{StartMenuLauncher}" >nul 2>nul
+del "{DesktopLauncher}" >nul 2>nul
+del "{LegacyStartMenuLauncher}" >nul 2>nul
 reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyleInjector /f >nul 2>nul
+reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\App Paths\GHubFreestyleInjector.WinUI.exe /f >nul 2>nul
 {selfDelete}
 """;
+    }
+
+    private static void CreateShortcut(string shortcutPath, string targetPath, string workingDirectory, string iconPath, string description)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath)!);
+        Type? shellType = null;
+        object? shell = null;
+        object? shortcut = null;
+        try
+        {
+            shellType = Type.GetTypeFromProgID("WScript.Shell");
+            if (shellType is null)
+            {
+                throw new InvalidOperationException("WScript.Shell não está disponível para criar atalhos do Windows.");
+            }
+
+            shell = Activator.CreateInstance(shellType);
+            if (shell is null)
+            {
+                throw new InvalidOperationException("Não foi possível iniciar o criador de atalhos do Windows.");
+            }
+
+            shortcut = shellType.InvokeMember(
+                "CreateShortcut",
+                System.Reflection.BindingFlags.InvokeMethod,
+                binder: null,
+                target: shell,
+                args: [shortcutPath]);
+            var shortcutType = shortcut!.GetType();
+            shortcutType.InvokeMember("TargetPath", System.Reflection.BindingFlags.SetProperty, null, shortcut, [targetPath]);
+            shortcutType.InvokeMember("WorkingDirectory", System.Reflection.BindingFlags.SetProperty, null, shortcut, [workingDirectory]);
+            shortcutType.InvokeMember("IconLocation", System.Reflection.BindingFlags.SetProperty, null, shortcut, [$"{iconPath},0"]);
+            shortcutType.InvokeMember("Description", System.Reflection.BindingFlags.SetProperty, null, shortcut, [description]);
+            shortcutType.InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, shortcut, []);
+        }
+        finally
+        {
+            if (shortcut is not null && Marshal.IsComObject(shortcut)) Marshal.FinalReleaseComObject(shortcut);
+            if (shell is not null && Marshal.IsComObject(shell)) Marshal.FinalReleaseComObject(shell);
+        }
+    }
+
+    private static int EstimateInstallSizeKb()
+    {
+        try
+        {
+            if (!Directory.Exists(InstallDir)) return 0;
+            var bytes = Directory.EnumerateFiles(InstallDir, "*", SearchOption.AllDirectories)
+                .Select(path => new FileInfo(path).Length)
+                .Sum();
+            return Math.Max(1, (int)Math.Ceiling(bytes / 1024.0));
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     private static void TryDelete(string path)
@@ -1026,11 +1119,19 @@ reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyl
         Environment.GetFolderPath(Environment.SpecialFolder.StartMenu),
         "Programs");
 
-    private static string StartMenuLauncher => Path.Combine(StartMenuProgramsDir, "G HUB RGB Freestyle Injector.cmd");
+    private static string StartMenuLauncher => Path.Combine(StartMenuProgramsDir, "G HUB RGB Freestyle Injector.lnk");
+
+    private static string LegacyStartMenuLauncher => Path.Combine(StartMenuProgramsDir, "G HUB RGB Freestyle Injector.cmd");
+
+    private static string DesktopLauncher => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+        "G HUB RGB Freestyle Injector.lnk");
 
     private static string UninstallScript => Path.Combine(InstallDir, "uninstall.cmd");
 
     private static string UninstallRegistryKey => @"Software\Microsoft\Windows\CurrentVersion\Uninstall\GHubFreestyleInjector";
+
+    private static string AppPathsRegistryKey => @"Software\Microsoft\Windows\CurrentVersion\App Paths\GHubFreestyleInjector.WinUI.exe";
 
     private static bool IsRunningFromInstallDir
     {
