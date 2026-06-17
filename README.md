@@ -1,5 +1,10 @@
 # G HUB RGB Freestyle Injector
 
+[![Baixar instalador](https://img.shields.io/badge/baixar-instalador%20Windows-238636?style=for-the-badge&logo=windows)](https://github.com/wvxbs/ghub-rgb-freestyle-injector/releases/latest/download/GHubFreestyleInjector-Setup-windows-x64.exe)
+[![Ver releases](https://img.shields.io/badge/ver-Releases-0969da?style=for-the-badge&logo=github)](https://github.com/wvxbs/ghub-rgb-freestyle-injector/releases/latest)
+
+**Download direto:** [GHubFreestyleInjector-Setup-windows-x64.exe](https://github.com/wvxbs/ghub-rgb-freestyle-injector/releases/latest/download/GHubFreestyleInjector-Setup-windows-x64.exe)
+
 Aplicativo Windows para criar e manter presets **Freestyle** do Logitech G HUB sem depender do editor visual do G HUB tecla por tecla.
 
 O projeto continua tendo uma CLI, mas o caminho principal é o app nativo **WinUI 3 / Windows App SDK**. Ele foi pensado para Windows 11, Logitech G HUB e teclados Logitech com RGB por tecla, especialmente o **Logitech G515 TKL em layout US internacional**.
@@ -16,11 +21,11 @@ O projeto continua tendo uma CLI, mas o caminho principal é o app nativo **WinU
 
 ## Baixar e usar
 
-A forma recomendada para usuários finais é baixar o instalador na página de Releases:
+A forma recomendada para usuários finais é baixar o instalador:
 
-```text
-GHubFreestyleInjector-Setup-windows-x64.exe
-```
+[Baixar GHubFreestyleInjector-Setup-windows-x64.exe](https://github.com/wvxbs/ghub-rgb-freestyle-injector/releases/latest/download/GHubFreestyleInjector-Setup-windows-x64.exe)
+
+A página com todas as versões fica em [Releases](https://github.com/wvxbs/ghub-rgb-freestyle-injector/releases/latest).
 
 O instalador coloca o app e a CLI no perfil do usuário, cria atalhos e registra a desinstalação em **Configurações > Aplicativos > Aplicativos instalados**.
 
